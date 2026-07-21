@@ -3,6 +3,10 @@
 import { FormEvent, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
+// Must match the `bhagavad_gita` source's total_units in the backend DB.
+// The backend is the authoritative check — this only drives the UI.
+const MAX_ORACLE_NUMBER = 701;
+
 type Translation = {
   text?: string;
 };
@@ -53,6 +57,24 @@ function normalizeResponse(response: OracleResponse): Result {
   };
 }
 
+function getNumberError(rawNumber: string): string {
+  if (!rawNumber.trim()) {
+    return "";
+  }
+
+  const parsed = Number(rawNumber);
+
+  if (!Number.isInteger(parsed)) {
+    return "Oracle number must be a whole number.";
+  }
+
+  if (parsed < 1 || parsed > MAX_ORACLE_NUMBER) {
+    return `Oracle number must be between 1 and ${MAX_ORACLE_NUMBER}.`;
+  }
+
+  return "";
+}
+
 export default function OracleForm() {
   const supabase = createClient();
   const [question, setQuestion] = useState("");
@@ -61,10 +83,23 @@ export default function OracleForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
+  const numberError = getNumberError(number);
+  const isSubmitDisabled = isLoading || !question || !number || Boolean(numberError);
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setResult(null);
+
+    // Defense in depth: re-validate here too, in case the disabled state on
+    // the submit button was bypassed (e.g. via DOM manipulation in devtools).
+    // The backend performs the real, authoritative range check regardless.
+    const currentNumberError = getNumberError(number);
+    if (currentNumberError) {
+      setError(currentNumberError);
+      return;
+    }
+
     setIsLoading(true);
 
     const {
@@ -99,8 +134,14 @@ export default function OracleForm() {
         }),
       });
 
-      if (response.status === 403) {
+      if (response.status === 403 || response.status === 402) {
         setError("You've used your 3 free questions. Upgrade to continue.");
+        return;
+      }
+
+      if (response.status === 400) {
+        const data = (await response.json().catch(() => null)) as { detail?: string } | null;
+        setError(data?.detail ?? `Oracle number must be between 1 and ${MAX_ORACLE_NUMBER}.`);
         return;
       }
 
@@ -157,13 +198,22 @@ export default function OracleForm() {
               onChange={(event) => setNumber(event.target.value)}
               required
               min={1}
-              className="mt-2 h-11 w-full rounded-md border border-stone-300 bg-white px-3 text-stone-950 outline-none transition focus:border-stone-950"
+              max={MAX_ORACLE_NUMBER}
+              aria-invalid={Boolean(numberError)}
+              className="mt-2 h-11 w-full rounded-md border border-stone-300 bg-white px-3 text-stone-950 outline-none transition focus:border-stone-950 aria-[invalid=true]:border-amber-400"
             />
+            {numberError ? (
+              <p className="mt-2 text-sm text-amber-700">{numberError}</p>
+            ) : (
+              <p className="mt-2 text-sm text-stone-500">
+                Enter a number between 1 and {MAX_ORACLE_NUMBER}.
+              </p>
+            )}
           </label>
 
           <button
             type="submit"
-            disabled={isLoading}
+            disabled={isSubmitDisabled}
             className="flex h-11 w-full items-center justify-center rounded-md bg-stone-950 px-4 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? "Asking..." : "Ask Oracle"}
