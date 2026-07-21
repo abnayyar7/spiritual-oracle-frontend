@@ -7,22 +7,17 @@ import { createClient } from "@/lib/supabase/client";
 // The backend is the authoritative check — this only drives the UI.
 const MAX_ORACLE_NUMBER = 701;
 
-type Translation = {
-  text?: string;
-};
-
 type OracleResponse = {
   answer?: string;
   takeaway?: string;
   generated_takeaway?: string;
   original_text?: string;
-  translation?: string | Translation;
-  translations?: Array<string | Translation>;
+  selected_translation?: string;
+  selected_translation_author?: string | null;
   chapter_number?: number;
   verse_number?: number;
   entry?: {
     original_text?: string;
-    translations?: Array<string | Translation>;
     chapter_number?: number;
     verse_number?: number;
   };
@@ -37,14 +32,7 @@ type Result = {
 };
 
 function getTranslation(response: OracleResponse) {
-  const translation =
-    response.translation ?? response.translations?.[0] ?? response.entry?.translations?.[0];
-
-  if (typeof translation === "string") {
-    return translation;
-  }
-
-  return translation?.text ?? "";
+  return response.selected_translation || response.entry?.original_text || "";
 }
 
 function normalizeResponse(response: OracleResponse): Result {
