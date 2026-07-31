@@ -1,18 +1,30 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useCallback, useEffect, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 
-// Must match the `bhagavad_gita` source's total_units in the backend DB.
-// The backend is the authoritative check — this only drives the UI.
-const MAX_ORACLE_NUMBER = 701;
+const DEFAULT_SOURCE_SLUG = "bhagavad_gita";
+
+// Only used until GET /sources responds, and as a floor if it fails. The
+// backend performs the real, authoritative range check regardless.
+const FALLBACK_SOURCES: Source[] = [
+  { id: 2, slug: "bhagavad_gita", title: "Bhagavad Gita", total_units: 701 },
+];
+
+type Source = {
+  id: number;
+  slug: string;
+  title: string;
+  total_units: number;
+};
 
 type OracleResponse = {
   answer?: string;
   takeaway?: string;
   generated_takeaway?: string;
   original_text?: string;
-  selected_translation?: string;
+  // null when the entry has no English translation yet
+  selected_translation?: string | null;
   selected_translation_author?: string | null;
   chapter_number?: number;
   verse_number?: number;
@@ -26,26 +38,26 @@ type OracleResponse = {
 type Result = {
   originalText: string;
   translation: string;
+  hasTranslation: boolean;
   chapterNumber?: number;
   verseNumber?: number;
   answer: string;
 };
 
-function getTranslation(response: OracleResponse) {
-  return response.selected_translation || response.entry?.original_text || "";
-}
-
 function normalizeResponse(response: OracleResponse): Result {
+  const translation = response.selected_translation ?? "";
+
   return {
     originalText: response.original_text ?? response.entry?.original_text ?? "",
-    translation: getTranslation(response),
+    translation,
+    hasTranslation: translation.trim().length > 0,
     chapterNumber: response.chapter_number ?? response.entry?.chapter_number,
     verseNumber: response.verse_number ?? response.entry?.verse_number,
     answer: response.answer ?? response.takeaway ?? response.generated_takeaway ?? "",
   };
 }
 
-function getNumberError(rawNumber: string): string {
+function getNumberError(rawNumber: string, maxNumber: number): string {
   if (!rawNumber.trim()) {
     return "";
   }
@@ -56,8 +68,8 @@ function getNumberError(rawNumber: string): string {
     return "Oracle number must be a whole number.";
   }
 
-  if (parsed < 1 || parsed > MAX_ORACLE_NUMBER) {
-    return `Oracle number must be between 1 and ${MAX_ORACLE_NUMBER}.`;
+  if (parsed < 1 || parsed > maxNumber) {
+    return `Oracle number must be between 1 and ${maxNumber}.`;
   }
 
   return "";
@@ -65,14 +77,80 @@ function getNumberError(rawNumber: string): string {
 
 export default function OracleForm() {
   const supabase = createClient();
+  const [sources, setSources] = useState<Source[]>(FALLBACK_SOURCES);
+  const [activeSlug, setActiveSlug] = useState(DEFAULT_SOURCE_SLUG);
   const [question, setQuestion] = useState("");
   const [number, setNumber] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
-  const numberError = getNumberError(number);
-  const isSubmitDisabled = isLoading || !question || !number || Boolean(numberError);
+  const activeSource =
+    sources.find((source) => source.slug === activeSlug) ?? sources[0];
+  const maxNumber = activeSource?.total_units ?? 1;
+
+  const numberError = getNumberError(number, maxNumber);
+  const isSubmitDisabled =
+    isLoading || !question || !number || Boolean(numberError);
+
+  useEffect(() => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    if (!apiUrl) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function loadSources() {
+      try {
+        const response = await fetch(
+          `${apiUrl!.replace(/\/$/, "")}/sources`,
+        );
+
+        if (!response.ok) {
+          return;
+        }
+
+        const data = (await response.json()) as Source[];
+
+        if (cancelled || !Array.isArray(data) || data.length === 0) {
+          return;
+        }
+
+        setSources(data);
+
+        // Keep the default pinned to the Gita when it is present.
+        if (!data.some((source) => source.slug === DEFAULT_SOURCE_SLUG)) {
+          setActiveSlug(data[0].slug);
+        }
+      } catch {
+        // Non-fatal: the fallback source keeps the form usable.
+      }
+    }
+
+    void loadSources();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const selectSource = useCallback(
+    (slug: string) => {
+      if (slug === activeSlug) {
+        return;
+      }
+
+      // Switching source invalidates everything tied to the old one.
+      setActiveSlug(slug);
+      setQuestion("");
+      setNumber("");
+      setResult(null);
+      setError("");
+    },
+    [activeSlug],
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -82,7 +160,7 @@ export default function OracleForm() {
     // Defense in depth: re-validate here too, in case the disabled state on
     // the submit button was bypassed (e.g. via DOM manipulation in devtools).
     // The backend performs the real, authoritative range check regardless.
-    const currentNumberError = getNumberError(number);
+    const currentNumberError = getNumberError(number, maxNumber);
     if (currentNumberError) {
       setError(currentNumberError);
       return;
@@ -118,7 +196,7 @@ export default function OracleForm() {
         body: JSON.stringify({
           question,
           number: Number(number),
-          source_slug: "bhagavad_gita",
+          source_slug: activeSlug,
         }),
       });
 
@@ -128,8 +206,12 @@ export default function OracleForm() {
       }
 
       if (response.status === 400) {
-        const data = (await response.json().catch(() => null)) as { detail?: string } | null;
-        setError(data?.detail ?? `Oracle number must be between 1 and ${MAX_ORACLE_NUMBER}.`);
+        const data = (await response.json().catch(() => null)) as
+          | { detail?: string }
+          | null;
+        setError(
+          data?.detail ?? `Oracle number must be between 1 and ${maxNumber}.`,
+        );
         return;
       }
 
@@ -159,6 +241,33 @@ export default function OracleForm() {
           </h1>
         </div>
 
+        <div
+          role="tablist"
+          aria-label="Choose a source"
+          className="mb-5 inline-flex rounded-md border border-stone-200 bg-stone-50 p-1"
+        >
+          {sources.map((source) => {
+            const isActive = source.slug === activeSlug;
+
+            return (
+              <button
+                key={source.slug}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => selectSource(source.slug)}
+                className={`h-9 rounded px-4 text-sm font-medium transition ${
+                  isActive
+                    ? "bg-white text-stone-950 shadow-sm"
+                    : "text-stone-500 hover:text-stone-800"
+                }`}
+              >
+                {source.title}
+              </button>
+            );
+          })}
+        </div>
+
         <form
           onSubmit={handleSubmit}
           className="space-y-5 rounded-lg border border-stone-200 bg-white p-6 shadow-sm"
@@ -186,7 +295,7 @@ export default function OracleForm() {
               onChange={(event) => setNumber(event.target.value)}
               required
               min={1}
-              max={MAX_ORACLE_NUMBER}
+              max={maxNumber}
               aria-invalid={Boolean(numberError)}
               className="mt-2 h-11 w-full rounded-md border border-stone-300 bg-white px-3 text-stone-950 outline-none transition focus:border-stone-950 aria-[invalid=true]:border-amber-400"
             />
@@ -194,7 +303,7 @@ export default function OracleForm() {
               <p className="mt-2 text-sm text-amber-700">{numberError}</p>
             ) : (
               <p className="mt-2 text-sm text-stone-500">
-                Enter a number between 1 and {MAX_ORACLE_NUMBER}.
+                Enter a number between 1 and {maxNumber}.
               </p>
             )}
           </label>
@@ -223,7 +332,13 @@ export default function OracleForm() {
             <p className="text-2xl leading-10 text-stone-950">
               {result.originalText}
             </p>
-            <p className="leading-7 text-stone-700">{result.translation}</p>
+            {result.hasTranslation ? (
+              <p className="leading-7 text-stone-700">{result.translation}</p>
+            ) : (
+              <p className="text-sm italic leading-7 text-stone-500">
+                English translation not yet available for this verse
+              </p>
+            )}
             <div className="border-t border-stone-200 pt-5">
               <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
                 Answer
