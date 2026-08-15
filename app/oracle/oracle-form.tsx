@@ -230,13 +230,13 @@ export default function OracleForm() {
   }
 
   return (
-    <main className="min-h-screen px-6 py-12">
+    <main className="min-h-[calc(100dvh-4rem)] bg-surface px-5 py-12 sm:px-6 sm:py-16">
       <section className="mx-auto w-full max-w-2xl">
         <div className="mb-8">
-          <p className="text-sm font-medium uppercase tracking-wide text-stone-500">
+          <p className="text-xs font-medium uppercase tracking-[0.2em] text-muted">
             Spiritual Oracle
           </p>
-          <h1 className="mt-3 text-3xl font-semibold text-stone-950">
+          <h1 className="mt-3 font-display text-4xl font-light text-primary sm:text-5xl">
             Ask your question
           </h1>
         </div>
@@ -244,7 +244,7 @@ export default function OracleForm() {
         <div
           role="tablist"
           aria-label="Choose a source"
-          className="mb-5 inline-flex rounded-md border border-stone-200 bg-stone-50 p-1"
+          className="mb-6 inline-flex rounded-full border border-line-strong bg-surface-2 p-1"
         >
           {sources.map((source) => {
             const isActive = source.slug === activeSlug;
@@ -256,10 +256,10 @@ export default function OracleForm() {
                 role="tab"
                 aria-selected={isActive}
                 onClick={() => selectSource(source.slug)}
-                className={`h-9 rounded px-4 text-sm font-medium transition ${
+                className={`h-9 rounded-full px-5 text-sm font-medium transition-colors ${
                   isActive
-                    ? "bg-white text-stone-950 shadow-sm"
-                    : "text-stone-500 hover:text-stone-800"
+                    ? "bg-accent text-on-accent"
+                    : "text-secondary hover:text-primary"
                 }`}
               >
                 {source.title}
@@ -270,10 +270,10 @@ export default function OracleForm() {
 
         <form
           onSubmit={handleSubmit}
-          className="space-y-5 rounded-lg border border-stone-200 bg-white p-6 shadow-sm"
+          className="space-y-5 rounded-2xl border border-line bg-elevated p-6 shadow-sm sm:p-8"
         >
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-sm font-medium text-secondary">
               Your question
             </span>
             <textarea
@@ -281,12 +281,12 @@ export default function OracleForm() {
               onChange={(event) => setQuestion(event.target.value)}
               required
               rows={5}
-              className="mt-2 w-full rounded-md border border-stone-300 bg-white px-3 py-3 text-stone-950 outline-none transition focus:border-stone-950"
+              className="mt-2 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none transition focus:border-accent"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium text-stone-700">
+            <span className="text-sm font-medium text-secondary">
               Oracle number
             </span>
             <input
@@ -297,12 +297,12 @@ export default function OracleForm() {
               min={1}
               max={maxNumber}
               aria-invalid={Boolean(numberError)}
-              className="mt-2 h-11 w-full rounded-md border border-stone-300 bg-white px-3 text-stone-950 outline-none transition focus:border-stone-950 aria-[invalid=true]:border-amber-400"
+              className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3.5 text-primary outline-none transition focus:border-accent aria-[invalid=true]:border-danger"
             />
             {numberError ? (
-              <p className="mt-2 text-sm text-amber-700">{numberError}</p>
+              <p className="mt-2 text-sm text-danger">{numberError}</p>
             ) : (
-              <p className="mt-2 text-sm text-stone-500">
+              <p className="mt-2 text-sm text-muted">
                 Enter a number between 1 and {maxNumber}.
               </p>
             )}
@@ -311,39 +311,39 @@ export default function OracleForm() {
           <button
             type="submit"
             disabled={isSubmitDisabled}
-            className="flex h-11 w-full items-center justify-center rounded-md bg-stone-950 px-4 text-sm font-medium text-white transition hover:bg-stone-800 disabled:cursor-not-allowed disabled:opacity-60"
+            className="flex h-12 w-full items-center justify-center rounded-full bg-accent px-4 text-sm font-medium tracking-wide text-on-accent transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {isLoading ? "Asking..." : "Ask Oracle"}
           </button>
         </form>
 
         {error ? (
-          <p className="mt-6 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p className="mt-6 rounded-xl border border-line-strong bg-surface-2 px-4 py-3 text-sm text-caution">
             {error}
           </p>
         ) : null}
 
         {result ? (
-          <article className="mt-8 space-y-5 rounded-lg border border-stone-200 bg-white p-6 shadow-sm">
-            <p className="text-sm font-medium text-stone-500">
+          <article className="mt-8 space-y-5 rounded-2xl border border-line bg-elevated p-6 shadow-sm sm:p-8">
+            <p className="text-xs uppercase tracking-[0.18em] text-muted">
               Chapter {result.chapterNumber ?? "-"}, Verse{" "}
               {result.verseNumber ?? "-"}
             </p>
-            <p className="text-2xl leading-10 text-stone-950">
+            <p className="font-deva text-xl leading-[2.1] text-primary sm:text-2xl">
               {result.originalText}
             </p>
             {result.hasTranslation ? (
-              <p className="leading-7 text-stone-700">{result.translation}</p>
+              <p className="leading-7 text-secondary">{result.translation}</p>
             ) : (
-              <p className="text-sm italic leading-7 text-stone-500">
+              <p className="text-sm italic leading-7 text-muted">
                 English translation not yet available for this verse
               </p>
             )}
-            <div className="border-t border-stone-200 pt-5">
-              <h2 className="text-sm font-semibold uppercase tracking-wide text-stone-500">
+            <div className="border-t border-line pt-5">
+              <h2 className="text-xs uppercase tracking-[0.18em] text-accent">
                 Answer
               </h2>
-              <p className="mt-3 leading-7 text-stone-800">{result.answer}</p>
+              <p className="mt-3 leading-7 text-primary">{result.answer}</p>
             </div>
           </article>
         ) : null}
