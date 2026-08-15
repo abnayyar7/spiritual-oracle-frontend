@@ -1,0 +1,183 @@
+/* ==========================================================================
+   Design tokens — the single source of truth for colour in this app.
+   ==========================================================================
+
+   No component, stylesheet or Tailwind class should ever contain a colour
+   literal. If you need a colour that is not here, add it here first.
+
+   Dark is the default. [data-theme="light"] overrides it.
+
+     <html data-theme="dark">   default, set in layout.tsx
+     <html data-theme="light">  light
+
+   data-theme works on any element, not just <html>, so a section can opt into
+   the opposite theme by setting it locally.
+
+   Why the dark block is `:root, [data-theme="dark"]` and not just `:root`:
+   :root only ever matches <html>. Without the attribute selector, a dark
+   island nested inside a light page would have no declarations of its own and
+   would inherit the light values.
+
+   Section 3 maps these into Tailwind's colour namespace — see the note there
+   for why the utility names differ from the token names.
+   ========================================================================== */
+
+/* -- 0. THEME-INDEPENDENT ------------------------------------------------- */
+
+:root {
+  /*
+   * The ink that sits on top of gold. Measured against --color-accent-primary
+   * in each theme:
+   *
+   *   dark  #d4af37  ->  9.23:1   AA + AAA
+   *   light #b8860b  ->  5.96:1   AA
+   *
+   * The same value wins in both, so it is declared once here and referenced
+   * from each theme below — the per-theme indirection is kept so light can
+   * diverge later without touching any consumer.
+   *
+   * Gold needs dark ink, not light: white on the dark-theme gold is 2.10:1 and
+   * on the light-theme gold 3.25:1. Both are unusable. Nothing pale should
+   * ever be placed on an accent fill.
+   *
+   * AAA is unreachable in light mode — even pure black on #b8860b tops out at
+   * 6.45:1 — so 5.96:1 is within 0.5 of the theoretical maximum.
+   */
+  --ink-on-gold: #0f0d0a;
+}
+
+/* -- 1. DARK (default) ---------------------------------------------------- */
+
+:root,
+[data-theme="dark"] {
+  /* Accent — Gold/Brass (from the hero dial) */
+  --color-accent-primary: #d4af37; /* bright gold — CTAs, active states, highlights */
+  --color-accent-secondary: #c5a059; /* muted brass — borders, rings, secondary accents */
+  --color-accent-glow: #f5e5b8; /* pale gold — glow/blur effects, hover shine */
+  --color-on-accent: var(--ink-on-gold); /* text/icons on an accent fill — 9.23:1 */
+
+  /* Surfaces */
+  --color-bg-primary: #0f0d0a; /* deep warm near-black */
+  --color-bg-secondary: #1a1611; /* slightly lifted panels/cards */
+  --color-bg-elevated: #241f18; /* modals, dropdowns, elevated surfaces */
+
+  /* Text */
+  --color-text-primary: #f2ebdd; /* warm cream — main text */
+  --color-text-secondary: #c9bfa8; /* muted warm gray — secondary text */
+  --color-text-muted: #8a8172; /* least prominent — timestamps, hints */
+
+  /* Borders (8-digit hex: last pair is alpha) */
+  --color-border: #3a322620; /* subtle warm-toned border */
+  --color-border-strong: #c5a05955; /* brass-tinted border for emphasis */
+
+  /* Semantic states */
+  --color-success: #7fa66b; /* muted sage green — fits warm palette */
+  --color-error: #c4665a; /* muted terracotta-red, not harsh red */
+  --color-warning: #d4a03a; /* close to accent, but distinct enough */
+  --color-info: #6b94a6; /* muted teal-blue for neutral notices */
+}
+
+/* -- 2. LIGHT ------------------------------------------------------------- */
+
+[data-theme="light"] {
+  --color-bg-primary: #fbf7ed; /* warm ivory/parchment */
+  --color-bg-secondary: #f3ecd9; /* slightly deeper parchment for panels */
+  --color-bg-elevated: #ffffff; /* clean white for cards/modals */
+
+  --color-text-primary: #2a2318; /* deep warm brown-black */
+  --color-text-secondary: #5c5341; /* muted warm brown */
+  --color-text-muted: #8c8270; /* least prominent */
+
+  --color-border: #c5a05930; /* brass-tinted, softer in light mode */
+  --color-border-strong: #b8934088; /* stronger brass border */
+
+  /* Accent stays the same hue, slightly deepened for contrast against light bg */
+  --color-accent-primary: #b8860b; /* deepened gold — reads clearly on ivory */
+  --color-accent-secondary: #a8823f; /* deepened brass */
+  --color-accent-glow: #e8d49a;
+  --color-on-accent: var(--ink-on-gold); /* 5.96:1 on #b8860b — AA */
+
+  /* Semantic states, slightly deepened for light-bg contrast */
+  --color-success: #5e8049;
+  --color-error: #a84a3d;
+  --color-warning: #b8860b;
+  --color-info: #4a7284;
+}
+
+/* -- 3. TAILWIND UTILITIES ------------------------------------------------- */
+
+/*
+ * `inline` is load-bearing twice over. It keeps each utility compiling to
+ * var(--color-text-primary) — resolved at the element, so a nested
+ * [data-theme] island re-resolves correctly — and it avoids Tailwind emitting
+ * its own :root copy, which for a same-named token would be
+ * `--color-x: var(--color-x)`: circular, and invalid at computed-value time.
+ * Hence the deliberately different names on the left.
+ *
+ *   bg-surface   bg-surface-2   bg-elevated
+ *   bg-accent    text-accent    text-brass    text-glow
+ *   text-on-accent  (defined separately below — see the note)
+ *   text-primary text-secondary text-muted
+ *   border-line  border-line-strong
+ *   text-ok  text-danger  text-caution  text-note
+ */
+@theme inline {
+  --color-accent: var(--color-accent-primary);
+  --color-brass: var(--color-accent-secondary);
+  --color-glow: var(--color-accent-glow);
+
+  --color-surface: var(--color-bg-primary);
+  --color-surface-2: var(--color-bg-secondary);
+  --color-elevated: var(--color-bg-elevated);
+
+  --color-primary: var(--color-text-primary);
+  --color-secondary: var(--color-text-secondary);
+  --color-muted: var(--color-text-muted);
+
+  --color-line: var(--color-border);
+  --color-line-strong: var(--color-border-strong);
+
+  --color-ok: var(--color-success);
+  --color-danger: var(--color-error);
+  --color-caution: var(--color-warning);
+  /* `note`, not `info`: an alias may never share a name with the token it
+     points at, or it compiles to --color-info: var(--color-info). */
+  --color-note: var(--color-info);
+}
+
+/*
+ * text-on-accent — the one entry that cannot live in the block above.
+ *
+ * Tailwind derives the utility name from the key, so `text-on-accent` requires
+ * the key --color-on-accent, which is also the token's own name. Inside
+ * @theme inline that would compile to --color-on-accent: var(--color-on-accent):
+ * circular, and invalid at computed-value time.
+ *
+ * Plain @theme instead. It emits a base value into @layer theme, which the
+ * unlayered theme blocks above override, so the utility still follows
+ * data-theme. Pointing it at --ink-on-gold rather than repeating the literal
+ * keeps the hex in exactly one place.
+ */
+@theme {
+  --color-on-accent: var(--ink-on-gold);
+}
+
+/* -- 3c. typography -------------------------------------------------------- */
+
+/*
+ * `font-display` -> the app serif loaded in app/fonts.ts. Named `display`
+ * rather than `serif` so it does not collide with Tailwind's built-in
+ * --font-serif key.
+ */
+@theme inline {
+  --font-display: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  /* System Devanagari faces — no webfont, so rendering varies by platform.
+     Subset and self-host before this goes anywhere near production. */
+  --font-deva: "Noto Sans Devanagari", "Nirmala UI", "Mangal", var(--font-cormorant),
+    serif;
+}
+
+/* -- 4. VARIANT ----------------------------------------------------------- */
+
+/* Makes `dark:` follow data-theme rather than only the OS setting. */
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));

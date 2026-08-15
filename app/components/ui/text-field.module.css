@@ -1,0 +1,134 @@
+/*
+ * Floating-label field. Shared by auth, password reset and contact.
+ *
+ * Written as a CSS Module rather than Tailwind peer-* variants on purpose: the
+ * effect depends on :focus winning over :not(:placeholder-shown), and with
+ * utility variants that ordering is decided by Tailwind's internal variant
+ * sort, not by the order you type the classes. Here the cascade is explicit.
+ *
+ * The mechanism is `placeholder=" "` — a single space. That makes
+ * :placeholder-shown true only while the field is empty, which is what lets
+ * pure CSS know whether the label should float. No JS, no onChange tracking.
+ */
+
+.field {
+  position: relative;
+  /* Room above the control for the floated label to sit in. */
+  padding-top: 1.35rem;
+}
+
+.input {
+  display: block;
+  width: 100%;
+  height: 3.1rem;
+  padding: 0 0.95rem;
+  border: 1px solid var(--color-border);
+  border-radius: 0.6rem;
+  background: var(--color-bg-primary);
+  color: var(--color-text-primary);
+  font-size: 0.95rem;
+  font-family: inherit;
+  outline: none;
+  transition:
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* Textarea variant: auto height, text starts below the at-rest label. */
+.textarea {
+  height: auto;
+  min-height: 8.5rem;
+  padding: 0.95rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.input::placeholder {
+  /* The space is a mechanism, never something to render. */
+  color: transparent;
+}
+
+.input:hover:not(:focus) {
+  border-color: var(--color-border-strong);
+}
+
+.input:focus {
+  border-color: var(--color-accent-primary);
+  /* Same glow recipe as the dial: a token mixed down with transparent. */
+  box-shadow:
+    0 0 0 3px color-mix(in srgb, var(--color-accent-primary) 14%, transparent),
+    0 0 18px color-mix(in srgb, var(--color-accent-glow) 22%, transparent);
+}
+
+.input[aria-invalid="true"] {
+  border-color: var(--color-error);
+}
+
+.input[aria-invalid="true"]:focus {
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-error) 16%, transparent);
+}
+
+.input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/*
+ * The label follows the control in the DOM so it can be reached with the
+ * adjacent-sibling combinator. It is still tied to the field by htmlFor/id, so
+ * screen readers and click-to-focus behave normally.
+ */
+.label {
+  position: absolute;
+  left: 0.95rem;
+  top: 1.35rem;
+  height: 3.1rem;
+  display: flex;
+  align-items: center;
+  pointer-events: none;
+  font-size: 0.95rem;
+  color: var(--color-text-secondary);
+  transform-origin: left center;
+  transition:
+    transform 200ms cubic-bezier(0.2, 0.7, 0.3, 1),
+    color 200ms ease;
+}
+
+/*
+ * Float when focused OR when the field holds a value. `scale` rather than an
+ * animated font-size: same shrink, but on the compositor, so it cannot cause a
+ * layout pass on every frame.
+ */
+.input:focus + .label,
+.input:not(:placeholder-shown) + .label {
+  transform: translateY(-2.15rem) scale(0.78);
+}
+
+/* Accent only while focused; a filled-but-idle field stays secondary. */
+.input:focus + .label {
+  color: var(--color-accent-primary);
+}
+
+.input[aria-invalid="true"]:not(:focus) + .label {
+  color: var(--color-error);
+}
+
+/*
+ * Chrome paints its own autofill background, which ignores the token palette
+ * and turns the field pale blue. An inset shadow the size of the box is the
+ * only reliable way to cover it.
+ */
+.input:-webkit-autofill,
+.input:-webkit-autofill:hover,
+.input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--color-text-primary);
+  -webkit-box-shadow: 0 0 0 100px var(--color-bg-primary) inset;
+  caret-color: var(--color-text-primary);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .input,
+  .label {
+    transition: none;
+  }
+}
