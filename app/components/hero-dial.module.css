@@ -1,0 +1,463 @@
+/*
+ * Celestial Dial — motion and layout.
+ *
+ * All tunables live in hero-dial.tsx (CONFIG). This file only describes how a
+ * ring moves, never how many there are or how fast.
+ *
+ * Every size derives from a single `--dial-size` custom property, so the whole
+ * instrument scales as one unit and nothing can drift out of proportion between
+ * breakpoints. Only `rotate` is animated — no layout, no paint, no filters in
+ * the animation path.
+ */
+
+.root {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--dial-bg);
+
+  /* The one number the rest of the component is measured against. */
+  --dial-size: min(92vw, 84vh, 820px);
+
+  /* Dark is the baseline; the light override below raises it. */
+  --ink-boost: 1;
+}
+
+/*
+ * Attribute selectors are not hashed by CSS Modules, so this matches a
+ * data-theme set anywhere above the component — <html>, or a local wrapper.
+ * The second selector covers the case where the dial root carries it itself.
+ */
+[data-theme="light"] .root,
+.root[data-theme="light"] {
+  --ink-boost: var(--ink-boost-light);
+}
+
+/* ---- glow ---------------------------------------------------------------- */
+
+/*
+ * Static: blurred once at rasterisation and never animated, so the blur cost is
+ * paid a single time rather than per frame.
+ */
+.glow {
+  position: absolute;
+  width: calc(var(--dial-size) * 1.08);
+  height: calc(var(--dial-size) * 1.08);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--dial-glow-core) 0%,
+    var(--dial-glow-mid) 30%,
+    transparent 66%
+  );
+  filter: blur(calc(var(--dial-size) * 0.05));
+  opacity: var(--dial-glow-intensity);
+  pointer-events: none;
+}
+
+/* Darkens the very centre so hero copy keeps contrast over the rings. */
+.scrim {
+  position: absolute;
+  width: calc(var(--dial-size) * 0.82);
+  height: calc(var(--dial-size) * 0.82);
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at 50% 50%,
+    var(--dial-scrim) 0%,
+    transparent 72%
+  );
+  pointer-events: none;
+}
+
+/* ---- dial and rings ------------------------------------------------------ */
+
+.dial {
+  position: relative;
+  width: var(--dial-size);
+  height: var(--dial-size);
+  pointer-events: none;
+}
+
+.ring {
+  position: absolute;
+  inset: 0;
+  will-change: rotate;
+  animation-duration: var(--dur);
+  animation-delay: var(--delay);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+.cw {
+  animation-name: dial-cw;
+}
+
+.ccw {
+  animation-name: dial-ccw;
+}
+
+.ringSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+  /*
+   * Hairline strokes on a rotating element are the main source of shimmer:
+   * at sub-pixel widths the rasteriser snaps the stroke differently frame to
+   * frame. geometricPrecision tells it to keep exact geometry rather than
+   * grid-fitting, which trades a hair of crispness for stable motion.
+   */
+  shape-rendering: geometricPrecision;
+}
+
+/*
+ * SVG colour and opacity live here rather than on stroke/fill/opacity
+ * attributes: attributes cannot take var(), and an attribute cannot vary by
+ * theme. See the note on RingOrnament in hero-dial.tsx.
+ *
+ * Every stroke opacity is the tuned dark value multiplied by --ink-boost,
+ * clamped so the brightest ring cannot exceed 1.
+ */
+.ringCircle {
+  stroke: var(--dial-ring);
+  opacity: min(1, calc(var(--op-ring) * var(--ink-boost)));
+}
+
+.tickMark {
+  stroke: var(--dial-tick);
+}
+
+.tickMajor {
+  opacity: min(1, calc(var(--op-major) * var(--ink-boost)));
+}
+
+.tickMinor {
+  opacity: min(1, calc(var(--op-minor) * var(--ink-boost)));
+}
+
+.spokeGroup {
+  opacity: min(1, calc(var(--op-spoke) * var(--ink-boost)));
+}
+
+.indexMark {
+  fill: var(--dial-tick);
+  opacity: min(1, calc(var(--op-index) * var(--ink-boost)));
+}
+
+@keyframes dial-cw {
+  to {
+    rotate: 360deg;
+  }
+}
+
+@keyframes dial-ccw {
+  to {
+    rotate: -360deg;
+  }
+}
+
+/* ---- perimeter markers --------------------------------------------------- */
+
+/*
+ * A zero-size point placed on the ring's circumference. `place-items: center`
+ * lets the label overflow it symmetrically, so the label's centre lands exactly
+ * on the radius regardless of how wide the text is.
+ *
+ * translateY uses --dial-size rather than a percentage: percentages on
+ * translateY resolve against the element's own height, which is zero here.
+ */
+.markerAnchor {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 0;
+  height: 0;
+  display: grid;
+  place-items: center;
+  transform: rotate(var(--angle))
+    translateY(calc(-1 * var(--marker-radius) * var(--dial-size)));
+}
+
+/*
+ * Keeping the numbers readable while the ring turns.
+ *
+ * The label rides the ring (so it orbits) but must not tumble with it. Two
+ * cancellations, on two different properties so they compose instead of
+ * overwriting each other:
+ *
+ *   transform: rotate(-angle)  — static, undoes the anchor's angular placement
+ *   animation: dial-ccw        — undoes the ring's rotation
+ *
+ * The counter-animation is given the ring's exact duration and delay, so the
+ * two stay locked at every instant — including when both are frozen by
+ * prefers-reduced-motion.
+ */
+.marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.35em;
+  white-space: nowrap;
+  text-align: center;
+  transform: rotate(calc(-1 * var(--angle)));
+  will-change: rotate;
+  animation-name: dial-ccw;
+  animation-duration: var(--dur);
+  animation-delay: var(--delay);
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+}
+
+/* Outer ring turns clockwise, so its labels counter-turn anticlockwise. */
+.markerFor-cw {
+  animation-name: dial-ccw;
+}
+
+.markerFor-ccw {
+  animation-name: dial-cw;
+}
+
+.markerValue {
+  font-size: clamp(0.75rem, 1.1vw + 0.4rem, 1rem);
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  color: var(--dial-marker);
+  font-variant-numeric: tabular-nums;
+}
+
+/*
+ * 0.2em, not the 0.3em this started at. Past roughly 0.25em, uppercase
+ * micro-type stops reading as a word and starts reading as loose letters, so
+ * the wider value was working against legibility rather than for it. Paired
+ * with the raised caption opacity and a slightly larger floor.
+ */
+.markerCaption {
+  font-size: clamp(0.46rem, 0.5vw + 0.26rem, 0.6rem);
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  /* Tracking adds space after the final letter; this re-centres the word. */
+  text-indent: 0.2em;
+  text-transform: uppercase;
+  color: var(--dial-caption);
+}
+
+/* ---- mobile safeguards ---------------------------------------------------- */
+
+/*
+ * Three things have to clear each other as the dial shrinks, and they do not
+ * shrink at the same rate — type has clamp() floors, geometry does not:
+ *
+ *   1. the label must stay inside the viewport
+ *   2. the label must stay inside the outer ring's tick marks, whose inner ends
+ *      sit at radius (460 - 22) / 1000 = 0.438 of the dial
+ *   3. the label must stay outside the centre copy's bounding box
+ *
+ * (2) caps the marker radius at ~0.42, which leaves (3) to be solved by making
+ * the copy narrower and its type floors lower, not by pushing labels further
+ * out. Dropping the caption below 640px also halves the label's radial height,
+ * which is what buys the room for (2).
+ */
+@media (max-width: 640px) {
+  .markerCaption {
+    display: none;
+  }
+
+  .root {
+    --marker-radius: 0.415;
+  }
+
+  .copy {
+    width: calc(var(--dial-size) * 0.54);
+  }
+
+  .headline {
+    font-size: clamp(1.5rem, 5vw + 0.35rem, 2.2rem);
+  }
+
+  .subtext {
+    font-size: clamp(0.78rem, 2vw + 0.35rem, 0.92rem);
+  }
+}
+
+/* Explicitly targeted at 360-400px handsets, where the clamp floors dominate
+ * and the copy box is at its worst ratio against the dial. */
+@media (max-width: 400px) {
+  .root {
+    --dial-size: min(94vw, 82vh);
+    --marker-radius: 0.42;
+  }
+
+  .copy {
+    width: calc(var(--dial-size) * 0.52);
+  }
+
+  .headline {
+    font-size: 1.4rem;
+    line-height: 1.22;
+  }
+
+  .subtext {
+    font-size: 0.76rem;
+    line-height: 1.5;
+  }
+
+  /* A wider, denser scrim so a label orbiting past the copy's corners is
+   * suppressed rather than competing with it. */
+  .scrim {
+    width: calc(var(--dial-size) * 0.92);
+    height: calc(var(--dial-size) * 0.92);
+    background: radial-gradient(
+      circle at 50% 50%,
+      var(--dial-scrim) 0%,
+      var(--dial-scrim) 34%,
+      transparent 76%
+    );
+  }
+}
+
+/* ---- centre slot (static — never animated) -------------------------------- */
+
+/*
+ * Width is capped by the innermost ring, not by taste. That ring sits at
+ * radius 316/1000 = 0.316 of the dial, so any copy box wider than 0.632 of the
+ * dial has the ring — and its index triangle — running straight through the
+ * headline. 0.54 leaves a real margin at every dial size.
+ */
+.copy {
+  position: absolute;
+  z-index: 2;
+  width: min(calc(var(--dial-size) * 0.5), 24rem);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 0 0.5rem;
+}
+
+/*
+ * Cormorant Garamond has a small x-height, so the sizes run larger than they
+ * would for a sans at the same optical weight. line-height 1.24 is deliberately
+ * generous — a display serif needs the air, and the headline sits inside a
+ * circle where tight leading reads as cramped.
+ */
+.headline {
+  font-family: var(--font-cormorant), Georgia, "Times New Roman", serif;
+  font-size: clamp(1.75rem, 3.6vw + 0.7rem, 2.9rem);
+  line-height: 1.24;
+  font-weight: 300;
+  letter-spacing: 0.005em;
+  color: var(--dial-headline);
+  text-wrap: balance;
+}
+
+/* The page body is Arial; next to Cormorant that reads as an accident. A
+ * neutral system stack sits under the serif without competing with it. */
+.subtext,
+.cta {
+  font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif;
+}
+
+.subtext {
+  margin-top: clamp(0.7rem, 1.2vw, 1.15rem);
+  font-size: clamp(0.8rem, 0.65vw + 0.6rem, 1.02rem);
+  line-height: 1.55;
+  color: var(--dial-subtext);
+  text-wrap: pretty;
+}
+
+.cta {
+  margin-top: clamp(1.1rem, 2vw, 1.9rem);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  height: clamp(2.4rem, 3vw + 1.4rem, 2.9rem);
+  padding: 0 clamp(1.4rem, 2.5vw, 2.2rem);
+  border: 1px solid var(--dial-cta-border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--dial-cta-text);
+  font-size: clamp(0.78rem, 0.5vw + 0.65rem, 0.92rem);
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  cursor: pointer;
+  pointer-events: auto;
+  /* scale rides the `scale` property so it cannot collide with anything that
+   * later needs `transform` on this element. */
+  scale: 1;
+  transition:
+    background-color 220ms ease,
+    border-color 220ms ease,
+    color 220ms ease,
+    box-shadow 220ms ease,
+    scale 220ms ease;
+}
+
+.cta:hover {
+  background: var(--dial-cta-hover);
+  border-color: var(--dial-cta-border-hover);
+  color: var(--dial-headline);
+  box-shadow: 0 0 20px var(--dial-glow-core);
+  scale: 1.05;
+}
+
+.cta:focus-visible {
+  outline: 2px solid var(--dial-marker);
+  outline-offset: 3px;
+  box-shadow: 0 0 20px var(--dial-glow-core);
+}
+
+.ctaArrow {
+  display: inline-block;
+  line-height: 1;
+  translate: 0 0;
+  transition:
+    translate 220ms ease,
+    opacity 220ms ease;
+  opacity: 0.75;
+}
+
+.cta:hover .ctaArrow,
+.cta:focus-visible .ctaArrow {
+  translate: 0.22em 0;
+  opacity: 1;
+}
+
+/* ---- reduced motion ------------------------------------------------------- */
+
+/*
+ * Freeze rather than remove. Pausing keeps each ring at the offset its negative
+ * delay put it, so the dial stays a composed instrument instead of snapping all
+ * three rings into alignment — and because the markers pause on the same tick,
+ * they stay upright.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .ring,
+  .marker {
+    animation-play-state: paused;
+  }
+
+  .ring,
+  .marker {
+    will-change: auto;
+  }
+
+  .cta,
+  .ctaArrow {
+    transition: none;
+  }
+
+  /* Hover feedback stays (colour, border, glow) — only the movement goes. */
+  .cta:hover {
+    scale: 1;
+  }
+
+  .cta:hover .ctaArrow,
+  .cta:focus-visible .ctaArrow {
+    translate: 0 0;
+  }
+}

@@ -1,0 +1,169 @@
+/*
+ * Number Cascade — animation layer.
+ *
+ * Everything tunable lives in hero-cascade.tsx (see CONFIG). This file only
+ * describes *how* an element moves, never *which* element or *how many*; per
+ * element values arrive as custom properties on the inline style attribute.
+ *
+ * Two rules hold the performance budget:
+ *   1. Only `translate`, `rotate`, `scale` and `opacity` are animated. All four
+ *      are composited — they never touch layout or paint. `left` / `font-size`
+ *      are written once at mount and never animated.
+ *   2. `translate` and `rotate` are the standalone CSS properties, not
+ *      `transform`. That lets one element run two independent animations at
+ *      different periods (a long fall + a short wobble) without needing a
+ *      wrapper element per item, halving the DOM and the composited layer count.
+ */
+
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /*
+   * Makes `cqh` inside resolve against this box's height, so the fall distance
+   * tracks whatever height the hero ends up being — 100vh on the demo page, or
+   * an 80vh section once it sits behind real hero copy. No JS measurement.
+   */
+  container-type: size;
+
+  background:
+    radial-gradient(
+      125% 90% at 50% 6%,
+      var(--cascade-bloom) 0%,
+      transparent 62%
+    ),
+    var(--cascade-bg);
+
+  /* Shrinks every element on small screens; see CONFIG.MOBILE_SCALE. */
+  --depth-scale: 1;
+}
+
+@media (max-width: 640px) {
+  .root {
+    --depth-scale: var(--cascade-mobile-scale);
+  }
+}
+
+.item {
+  position: absolute;
+  top: 0;
+  /* Static: written once, never animated. */
+  left: var(--x);
+
+  font-size: calc(var(--size) * var(--depth-scale));
+  line-height: 1;
+  color: var(--cascade-ink);
+  white-space: nowrap;
+  user-select: none;
+
+  /*
+   * Glow. text-shadow rather than filter: drop-shadow — it is a paint-time
+   * effect on glyph coverage, which is far cheaper than a full filter pass,
+   * and it is never animated so it rasterises exactly once per element.
+   */
+  text-shadow:
+    0 0 calc(4px * var(--glow)) var(--cascade-glow-core),
+    0 0 calc(14px * var(--glow)) var(--cascade-glow),
+    0 0 calc(38px * var(--glow)) var(--cascade-glow),
+    0 0 calc(80px * var(--glow)) var(--cascade-glow-far);
+
+  /* Keyframes own opacity; 0 here keeps the first painted frame from flashing. */
+  opacity: 0;
+  will-change: translate, rotate, opacity;
+
+  animation:
+    cascade-fall var(--fall) linear var(--fall-delay) infinite,
+    cascade-wobble var(--spin) ease-in-out var(--spin-delay) infinite alternate;
+}
+
+/*
+ * Depth blur, applied only to the layers that actually need it. A separate
+ * class matters: `filter: blur(0px)` is still a filter pass, so the near layer
+ * must carry no `filter` declaration at all rather than a zeroed one.
+ */
+.soft {
+  filter: blur(var(--blur));
+}
+
+.numeral {
+  font-family: ui-sans-serif, "Segoe UI", system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  font-weight: 200;
+}
+
+.glyph {
+  /*
+   * System Devanagari faces. Deliberately no webfont — see the note in the
+   * component file about what to load before this ships.
+   */
+  font-family: "Noto Sans Devanagari", "Nirmala UI", "Mangal", "Segoe UI",
+    system-ui, sans-serif;
+  font-weight: 400;
+}
+
+/*
+ * The seamless loop. The element is fully transparent at both 0% and 100%, so
+ * the instant `translate` snaps back to the top there is nothing on screen to
+ * see snapping. No JS, no duplicated element, no reset jump.
+ */
+@keyframes cascade-fall {
+  0% {
+    translate: 0 var(--from-y);
+    opacity: 0;
+  }
+  8% {
+    opacity: var(--peak);
+  }
+  92% {
+    opacity: var(--peak);
+  }
+  100% {
+    translate: var(--sway) var(--to-y);
+    opacity: 0;
+  }
+}
+
+/*
+ * Runs on its own period, unrelated to the fall, and `alternate` makes it
+ * seamless by construction. Two incommensurate periods per element are what
+ * keep the field from reading as mechanical.
+ */
+@keyframes cascade-wobble {
+  from {
+    rotate: calc(-1 * var(--rot));
+    scale: 1;
+  }
+  to {
+    rotate: var(--rot);
+    scale: var(--breathe);
+  }
+}
+
+/*
+ * Focuses attention on the centre (where hero copy will land) and darkens the
+ * edges so elements sink out rather than butt against the frame.
+ */
+.vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    118% 78% at 50% 42%,
+    transparent 30%,
+    var(--cascade-vignette) 100%
+  );
+}
+
+/*
+ * Reduced motion: freeze rather than remove. Every element carries a negative
+ * animation-delay, so a paused animation renders at that offset — the field
+ * stays fully composed and evenly distributed, it just stops moving. Removing
+ * the animation instead would snap all 23 elements to 0% (above the frame, at
+ * opacity 0) and the section would render empty.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .item {
+    animation-play-state: paused;
+    will-change: auto;
+  }
+}

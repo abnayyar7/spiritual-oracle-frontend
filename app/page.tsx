@@ -1,26 +1,36 @@
-import Link from "next/link";
+import Footer from "@/app/components/footer";
+import HeroDial from "@/app/components/hero-dial";
+import HowItWorks from "@/app/components/home/how-it-works";
+import SampleExperience from "@/app/components/home/sample-experience";
+import TrustStrip from "@/app/components/home/trust-strip";
+import { getSessionUser } from "@/lib/auth";
 
-export default function Home() {
+/*
+ * Homepage. The hero is HeroDial exactly as previewed at /dev/hero-dial —
+ * same placeholder copy, no overrides — with the CTA pointed at the right
+ * route for the current session.
+ *
+ * overflow-hidden is scoped to the hero section rather than the page: on the
+ * page it would clip everything below it and kill scrolling. Height subtracts
+ * the 4rem header so the dial fills exactly one viewport.
+ */
+
+export default async function Home() {
+  const user = await getSessionUser();
+
   return (
-    <main className="flex min-h-screen items-center justify-center px-6 py-16">
-      <section className="w-full max-w-2xl text-center">
-        <p className="mb-4 text-sm font-medium uppercase tracking-wide text-stone-500">
-          Bhagavad Gita Oracle
-        </p>
-        <h1 className="text-4xl font-semibold text-stone-950 sm:text-5xl">
-          Ask with intention. Receive a verse-led reflection.
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-8 text-stone-600">
-          Spiritual Oracle pairs your question and oracle number with a passage
-          from the Bhagavad Gita, then offers a concise AI-generated takeaway.
-        </p>
-        <Link
-          href="/login"
-          className="mt-10 inline-flex h-11 items-center justify-center rounded-md bg-stone-950 px-6 text-sm font-medium text-white transition hover:bg-stone-800"
-        >
-          Get Started
-        </Link>
-      </section>
-    </main>
+    <>
+      <main>
+        <section className="relative h-[calc(100dvh-4rem)] w-full overflow-hidden">
+          <HeroDial ctaHref={user ? "/oracle" : "/login"} />
+        </section>
+
+        <TrustStrip />
+        <HowItWorks />
+        <SampleExperience />
+      </main>
+
+      <Footer />
+    </>
   );
 }
