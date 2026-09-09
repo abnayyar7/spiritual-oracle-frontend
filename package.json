@@ -18,6 +18,8 @@
     "react-dom": "^18.3.1"
   },
   "devDependencies": {
+    "@fontsource/cormorant-garamond": "^5.3.0",
+    "@fontsource/noto-sans-devanagari": "^5.3.0",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^18.3.31",
