@@ -53,13 +53,17 @@ export async function GET(request: Request) {
     }
 
     // Load fonts from public directory
-    const devanagariFont = await fetch(
-      new URL("/fonts/noto-sans-devanagari.woff2", request.url)
-    ).then((res) => res.arrayBuffer());
+    const { readFile } = await import("fs/promises");
+    const { join } = await import("path");
+    const fontDir = join(process.cwd(), "public/fonts");
 
-    const cormorantFont = await fetch(
-      new URL("/fonts/cormorant-garamond.woff2", request.url)
-    ).then((res) => res.arrayBuffer());
+    const devanagariFont = await readFile(
+      join(fontDir, "noto-sans-devanagari.woff2")
+    );
+
+    const cormorantFont = await readFile(
+      join(fontDir, "cormorant-garamond.woff2")
+    );
 
     return new ImageResponse(
       (
