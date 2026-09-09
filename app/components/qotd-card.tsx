@@ -48,13 +48,7 @@ export function QOTDCard({
   const handleShareImage = async () => {
     setImageLoading(true);
     try {
-      const params = new URLSearchParams({
-        date,
-        original: original_text,
-        reflection: reflection_text,
-      });
-
-      const imageUrl = `/api/qotd/share-image?${params}`;
+      const imageUrl = `/api/qotd/share-image?date=${date}`;
 
       if (navigator.share && navigator.canShare({ files: [] })) {
         // Mobile share with image
