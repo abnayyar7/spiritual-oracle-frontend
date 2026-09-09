@@ -22,7 +22,7 @@ export async function getTodayQOTD(): Promise<QOTDData | null> {
         display_date,
         reflection_text,
         entry_id,
-        entries!inner(original_text)
+        entries(original_text)
       `
       )
       .eq("display_date", today)
@@ -34,19 +34,20 @@ export async function getTodayQOTD(): Promise<QOTDData | null> {
       return null;
     }
 
-    // Type assertion for the nested entry
-    const entryData = data.entries as { original_text: string } | null;
+    // Handle the nested entry data - can be array or single object
+    const entryArray = (data as any).entries as Array<{ original_text: string }> | null;
+    const entryData = Array.isArray(entryArray) ? entryArray[0] : entryArray;
 
-    if (!entryData) {
+    if (!entryData?.original_text) {
       console.log("Entry data not found for QOTD");
       return null;
     }
 
     return {
-      date: data.display_date,
+      date: (data as any).display_date,
       original_text: entryData.original_text,
-      reflection_text: data.reflection_text,
-      entry_id: data.entry_id,
+      reflection_text: (data as any).reflection_text,
+      entry_id: (data as any).entry_id,
     };
   } catch (err) {
     console.error("Failed to fetch QOTD:", err);
