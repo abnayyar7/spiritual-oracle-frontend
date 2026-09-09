@@ -52,19 +52,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // Load fonts from public directory
-    const { readFile } = await import("fs/promises");
-    const { join } = await import("path");
-    const fontDir = join(process.cwd(), "public/fonts");
-
-    const devanagariFont = await readFile(
-      join(fontDir, "noto-sans-devanagari.woff2")
-    );
-
-    const cormorantFont = await readFile(
-      join(fontDir, "cormorant-garamond.woff2")
-    );
-
     return new ImageResponse(
       (
         <div
@@ -157,18 +144,6 @@ export async function GET(request: Request) {
       {
         width: 1200,
         height: 630,
-        fonts: [
-          {
-            name: "Noto Sans Devanagari",
-            data: devanagariFont,
-            style: "normal",
-          },
-          {
-            name: "Cormorant Garamond",
-            data: cormorantFont,
-            style: "normal",
-          },
-        ],
       }
     );
   } catch (error) {
