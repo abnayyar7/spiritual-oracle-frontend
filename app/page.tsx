@@ -1,9 +1,10 @@
 import Footer from "@/app/components/footer";
 import HeroDial from "@/app/components/hero-dial";
 import HowItWorks from "@/app/components/home/how-it-works";
-import SampleExperience from "@/app/components/home/sample-experience";
 import TrustStrip from "@/app/components/home/trust-strip";
+import { QOTDCard } from "@/app/components/qotd-card";
 import { getSessionUser } from "@/lib/auth";
+import { getTodayQOTD } from "@/lib/qotd";
 
 /*
  * Homepage. The hero is HeroDial exactly as previewed at /dev/hero-dial —
@@ -17,6 +18,7 @@ import { getSessionUser } from "@/lib/auth";
 
 export default async function Home() {
   const user = await getSessionUser();
+  const qotd = await getTodayQOTD();
 
   return (
     <>
@@ -26,8 +28,24 @@ export default async function Home() {
         </section>
 
         <TrustStrip />
+
+        {/* Quote of the Day Section */}
+        {qotd && (
+          <section className="w-full bg-surface px-6 py-16 sm:py-24">
+            <div className="mx-auto max-w-6xl">
+              <h2 className="font-display text-3xl font-light tracking-wide text-primary mb-12 text-center sm:text-4xl">
+                Verse of the Day
+              </h2>
+              <QOTDCard
+                date={qotd.date}
+                original_text={qotd.original_text}
+                reflection_text={qotd.reflection_text}
+              />
+            </div>
+          </section>
+        )}
+
         <HowItWorks />
-        <SampleExperience />
       </main>
 
       <Footer />
