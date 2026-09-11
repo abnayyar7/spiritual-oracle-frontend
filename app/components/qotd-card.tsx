@@ -59,11 +59,14 @@ export function QOTDCard({
     try {
       const imageUrl = `/api/qotd/share-image?date=${date}`;
 
-      if (navigator.share && navigator.canShare({ files: [] })) {
-        // Mobile share with image
+      // Check if file sharing is supported (mobile/native share)
+      const supportsFileSharing = navigator.share && navigator.canShare?.({ files: [] });
+
+      if (supportsFileSharing) {
+        // Mobile: share with native share sheet
         const response = await fetch(imageUrl);
         const blob = await response.blob();
-        const file = new File([blob], `qotd-${date}.png`, {
+        const file = new File([blob], `spiritual-oracle-${date}.png`, {
           type: "image/png",
         });
 
@@ -76,12 +79,22 @@ export function QOTDCard({
         } catch (err) {
           if ((err as Error).name !== "AbortError") {
             console.error("Share failed:", err);
-            window.open(imageUrl, "_blank");
           }
         }
       } else {
-        // Desktop: open image in new tab or download
-        window.open(imageUrl, "_blank");
+        // Desktop: download the image file
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+
+        const link = document.createElement("a");
+        link.href = objectUrl;
+        link.download = `spiritual-oracle-${date}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        URL.revokeObjectURL(objectUrl);
       }
     } catch (err) {
       console.error("Image generation failed:", err);
