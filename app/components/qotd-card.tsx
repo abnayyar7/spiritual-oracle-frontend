@@ -60,7 +60,7 @@ export function QOTDCard({
       const imageUrl = `/api/qotd/share-image?date=${date}`;
 
       // Check if file sharing is supported (mobile/native share)
-      const supportsFileSharing = navigator.share && navigator.canShare?.({ files: [] });
+      const supportsFileSharing = !!navigator.canShare?.({ files: [] });
 
       if (supportsFileSharing) {
         // Mobile: share with native share sheet
