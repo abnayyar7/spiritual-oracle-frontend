@@ -66,17 +66,20 @@ export function QOTDCard({
       );
 
       const blob = await response.blob();
-      console.log(`✓ Blob created, size: ${blob.size} bytes`);
+      console.log(`✓ Blob created, size: ${blob.size} bytes, type: ${blob.type}`);
 
-      // Check if file sharing is supported (mobile/native share)
-      const supportsFileSharing = !!navigator.canShare?.({ files: [] });
-      console.log(`📱 navigator.canShare with file: ${supportsFileSharing}`);
+      // Log iOS Safari capabilities
+      console.log(`📱 navigator.share exists: ${!!navigator.share}`);
+      console.log(`📱 navigator.canShare exists: ${!!navigator.canShare}`);
 
-      if (supportsFileSharing) {
-        console.log("→ Using native share (mobile)");
-        const file = new File([blob], `spiritual-oracle-${date}.png`, {
+      // Try native share first (iOS Safari may not have canShare but still supports share with files)
+      if (navigator.share) {
+        console.log("→ Attempting native share with file...");
+        const fileName = `spiritual-oracle-${date}.png`;
+        const file = new File([blob], fileName, {
           type: "image/png",
         });
+        console.log(`✓ File created: ${fileName}, type: ${file.type}`);
 
         try {
           await navigator.share({
@@ -85,36 +88,51 @@ export function QOTDCard({
             files: [file],
           });
           console.log("✓ Native share completed");
-        } catch (err) {
-          if ((err as Error).name !== "AbortError") {
-            console.error("❌ Share failed:", (err as Error).message);
-          } else {
+          return;
+        } catch (shareErr) {
+          const errorName = (shareErr as Error).name;
+          const errorMsg = (shareErr as Error).message;
+          console.warn(
+            `⚠️ Native share failed [${errorName}]: ${errorMsg}`
+          );
+          if (errorName === "AbortError") {
             console.log("ℹ️ User cancelled share");
+            return;
+          }
+          if (
+            errorName === "NotAllowedError" ||
+            errorName === "TypeError"
+          ) {
+            console.log("→ Share not supported, falling back to download");
+            // Continue to download fallback below
+          } else {
+            throw shareErr;
           }
         }
-      } else {
-        console.log("→ Using download fallback (desktop)");
-        const objectUrl = URL.createObjectURL(blob);
-        console.log("✓ Object URL created:", objectUrl);
-
-        const link = document.createElement("a");
-        link.href = objectUrl;
-        link.download = `spiritual-oracle-${date}.png`;
-        document.body.appendChild(link);
-        console.log("✓ Link element created and appended");
-
-        link.click();
-        console.log("✓ Click triggered, download should start");
-
-        // Small delay before cleanup to ensure download starts
-        setTimeout(() => {
-          document.body.removeChild(link);
-          URL.revokeObjectURL(objectUrl);
-          console.log("✓ Cleanup completed");
-        }, 100);
       }
+
+      // Fallback: download the image
+      console.log("→ Using download fallback");
+      const objectUrl = URL.createObjectURL(blob);
+      console.log("✓ Object URL created");
+
+      const link = document.createElement("a");
+      link.href = objectUrl;
+      link.download = `spiritual-oracle-${date}.png`;
+      document.body.appendChild(link);
+      console.log("✓ Link element appended to DOM");
+
+      link.click();
+      console.log("✓ Click triggered, download should start");
+
+      // Small delay before cleanup to ensure download starts
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(objectUrl);
+        console.log("✓ Cleanup completed");
+      }, 100);
     } catch (err) {
-      console.error("❌ Image generation failed:", (err as Error).message);
+      console.error("❌ Image share failed:", (err as Error).message);
       console.error("Full error:", err);
     } finally {
       setImageLoading(false);
