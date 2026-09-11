@@ -1,5 +1,6 @@
 import { ImageResponse } from "@vercel/og";
 import { createClient } from "@/lib/supabase/server";
+import { cleanVerseText } from "@/lib/verse-utils";
 
 interface QOTDRow {
   entry_id: number;
@@ -86,7 +87,7 @@ export async function GET(request: Request) {
                 letterSpacing: "-0.5px",
               }}
             >
-              {entryData.original_text}
+              {cleanVerseText(entryData.original_text)}
             </div>
           </div>
 
