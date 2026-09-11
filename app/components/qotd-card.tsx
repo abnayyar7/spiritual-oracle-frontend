@@ -58,14 +58,22 @@ export function QOTDCard({
     setImageLoading(true);
     try {
       const imageUrl = `/api/qotd/share-image?date=${date}`;
+      console.log("🖼️ Fetching image from API:", imageUrl);
+
+      const response = await fetch(imageUrl);
+      console.log(
+        `✓ Image fetched, status: ${response.status}, content-type: ${response.headers.get("content-type")}`
+      );
+
+      const blob = await response.blob();
+      console.log(`✓ Blob created, size: ${blob.size} bytes`);
 
       // Check if file sharing is supported (mobile/native share)
       const supportsFileSharing = !!navigator.canShare?.({ files: [] });
+      console.log(`📱 navigator.canShare with file: ${supportsFileSharing}`);
 
       if (supportsFileSharing) {
-        // Mobile: share with native share sheet
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
+        console.log("→ Using native share (mobile)");
         const file = new File([blob], `spiritual-oracle-${date}.png`, {
           type: "image/png",
         });
@@ -76,28 +84,38 @@ export function QOTDCard({
             text: reflection_text,
             files: [file],
           });
+          console.log("✓ Native share completed");
         } catch (err) {
           if ((err as Error).name !== "AbortError") {
-            console.error("Share failed:", err);
+            console.error("❌ Share failed:", (err as Error).message);
+          } else {
+            console.log("ℹ️ User cancelled share");
           }
         }
       } else {
-        // Desktop: download the image file
-        const response = await fetch(imageUrl);
-        const blob = await response.blob();
+        console.log("→ Using download fallback (desktop)");
         const objectUrl = URL.createObjectURL(blob);
+        console.log("✓ Object URL created:", objectUrl);
 
         const link = document.createElement("a");
         link.href = objectUrl;
         link.download = `spiritual-oracle-${date}.png`;
         document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
+        console.log("✓ Link element created and appended");
 
-        URL.revokeObjectURL(objectUrl);
+        link.click();
+        console.log("✓ Click triggered, download should start");
+
+        // Small delay before cleanup to ensure download starts
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(objectUrl);
+          console.log("✓ Cleanup completed");
+        }, 100);
       }
     } catch (err) {
-      console.error("Image generation failed:", err);
+      console.error("❌ Image generation failed:", (err as Error).message);
+      console.error("Full error:", err);
     } finally {
       setImageLoading(false);
       setShowShareMenu(false);
