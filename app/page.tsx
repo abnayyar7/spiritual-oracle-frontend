@@ -16,9 +16,17 @@ import { getTodayQOTD } from "@/lib/qotd";
  * the 4rem header so the dial fills exactly one viewport.
  */
 
-export default async function Home() {
+export default async function Home({
+  searchParams,
+}: {
+  searchParams: Promise<{ date?: string }>;
+}) {
   const user = await getSessionUser();
-  const qotd = await getTodayQOTD();
+  const params = await searchParams;
+
+  // Dev-only: allow date override via URL parameter
+  const overrideDate = process.env.NODE_ENV !== "production" ? params.date : undefined;
+  const qotd = await getTodayQOTD(overrideDate);
 
   return (
     <>
@@ -40,6 +48,7 @@ export default async function Home() {
                 date={qotd.date}
                 original_text={qotd.original_text}
                 reflection_text={qotd.reflection_text}
+                source_title={qotd.source_name}
               />
             </div>
           </section>

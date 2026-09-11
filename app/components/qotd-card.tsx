@@ -11,12 +11,21 @@ interface QOTDCardProps {
   source_title?: string;
 }
 
+function formatDate(dateString: string): string {
+  const date = new Date(dateString + "T00:00:00Z");
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+}
+
 export function QOTDCard({
   date,
   original_text,
   reflection_text,
   chapter_verse = "Bhagavad Gita",
-  source_title = "Gita",
+  source_title,
 }: QOTDCardProps) {
   const [showShareMenu, setShowShareMenu] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -103,57 +112,13 @@ export function QOTDCard({
   return (
     <div className="w-full max-w-2xl mx-auto">
       {/* Card Container */}
-      <div className="relative bg-elevated rounded-lg border border-line p-8 shadow-lg">
-        {/* Share Button */}
-        <div className="absolute top-6 right-6">
-          <button
-            onClick={() => setShowShareMenu(!showShareMenu)}
-            className="p-2 text-secondary hover:text-accent transition-colors"
-            aria-label="Share"
-            title="Share this quote"
-          >
-            <Share2 size={20} />
-          </button>
-
-          {/* Share Menu */}
-          {showShareMenu && (
-            <div className="absolute top-12 right-0 bg-elevated border border-line rounded-lg shadow-xl z-50 min-w-max">
-              <button
-                onClick={handleShareText}
-                className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-surface-2 transition-colors first:rounded-t-lg"
-              >
-                {copied ? (
-                  <div className="flex items-center gap-2">
-                    <Check size={16} />
-                    Copied!
-                  </div>
-                ) : (
-                  <div className="flex items-center gap-2">
-                    <Copy size={16} />
-                    Share as text
-                  </div>
-                )}
-              </button>
-              <button
-                onClick={handleShareImage}
-                disabled={imageLoading}
-                className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-surface-2 transition-colors disabled:opacity-50 last:rounded-b-lg"
-              >
-                <div className="flex items-center gap-2">
-                  <Share2 size={16} />
-                  {imageLoading ? "Generating..." : "Share as image"}
-                </div>
-              </button>
-            </div>
-          )}
-        </div>
-
+      <div className="bg-elevated rounded-lg border border-line-strong p-8 shadow-lg">
         {/* Verse */}
         <div className="text-center mb-8">
           <p className="font-deva text-2xl text-primary leading-relaxed">
             {original_text}
           </p>
-          <p className="text-xs text-muted mt-3">{source_title}</p>
+          <p className="text-xs text-muted mt-3">{source_title || chapter_verse}</p>
         </div>
 
         {/* Gold Divider */}
@@ -166,8 +131,55 @@ export function QOTDCard({
           </p>
         </div>
 
-        {/* Date Footer */}
-        <p className="text-center text-xs text-muted">{date}</p>
+        {/* Date and Share Footer */}
+        <div className="flex flex-col items-center gap-4 pt-4 border-t border-line">
+          <p className="text-center text-xs text-muted">{formatDate(date)}</p>
+
+          {/* Share Button */}
+          <div className="relative">
+            <button
+              onClick={() => setShowShareMenu(!showShareMenu)}
+              className="inline-flex items-center gap-2 px-3 py-1.5 text-xs text-secondary hover:text-accent transition-colors"
+              aria-label="Share"
+              title="Share this quote"
+            >
+              <Share2 size={16} />
+              Share
+            </button>
+
+            {/* Share Menu */}
+            {showShareMenu && (
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 bg-elevated border border-line rounded-lg shadow-xl z-50 min-w-max">
+                <button
+                  onClick={handleShareText}
+                  className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-surface-2 transition-colors first:rounded-t-lg"
+                >
+                  {copied ? (
+                    <div className="flex items-center gap-2">
+                      <Check size={16} />
+                      Copied!
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <Copy size={16} />
+                      Share as text
+                    </div>
+                  )}
+                </button>
+                <button
+                  onClick={handleShareImage}
+                  disabled={imageLoading}
+                  className="w-full px-4 py-2 text-left text-sm text-primary hover:bg-surface-2 transition-colors disabled:opacity-50 last:rounded-b-lg"
+                >
+                  <div className="flex items-center gap-2">
+                    <Share2 size={16} />
+                    {imageLoading ? "Generating..." : "Share as image"}
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );
