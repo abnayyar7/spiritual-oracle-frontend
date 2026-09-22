@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SourceGuidanceDrawer } from "@/app/components/source-guidance-drawer";
 
@@ -78,6 +79,7 @@ function getNumberError(rawNumber: string, maxNumber: number): string {
 
 export default function OracleForm() {
   const supabase = createClient();
+  const searchParams = useSearchParams();
   const [sources, setSources] = useState<Source[]>(FALLBACK_SOURCES);
   const [activeSlug, setActiveSlug] = useState(DEFAULT_SOURCE_SLUG);
   const [question, setQuestion] = useState("");
@@ -86,7 +88,9 @@ export default function OracleForm() {
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGuidanceOpen, setIsGuidanceOpen] = useState(false);
+  const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
 
   const activeSource =
     sources.find((source) => source.slug === activeSlug) ?? sources[0];
