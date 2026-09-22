@@ -104,7 +104,9 @@ export default function AuthForm({
     try {
       console.log("🔍 [Auth] Checking onboarding status for user:", data.user?.id);
 
-      const response = await fetch("/api/profile");
+      const response = await fetch("/api/profile", {
+        credentials: "include",
+      });
 
       console.log("📡 [Auth] Profile API response status:", response.status);
 
