@@ -98,29 +98,50 @@ export default function AuthForm({
     }
 
     // Check onboarding_complete flag to route appropriately
+    // Add delay to allow session cookie to be set on server
+    await new Promise((resolve) => setTimeout(resolve, 200));
+
     try {
-      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
-      const response = await fetch(`${apiUrl}/users/profile`, {
-        headers: {
-          Authorization: `Bearer ${data.user?.id || ""}`,
-        },
-      });
+      console.log("🔍 [Auth] Checking onboarding status for user:", data.user?.id);
+
+      const response = await fetch("/api/profile");
+
+      console.log("📡 [Auth] Profile API response status:", response.status);
 
       if (response.ok) {
         const profile = await response.json();
+        console.log("✅ [Auth] Profile data received:", {
+          onboarding_complete: profile.onboarding_complete,
+          id: profile.id,
+        });
+
         if (profile.onboarding_complete === false || profile.onboarding_complete === null) {
+          console.log("🚀 [Auth] Routing to /onboarding (onboarding_complete is false/null)");
+          router.push("/onboarding");
+          return;
+        }
+
+        console.log("🚀 [Auth] Routing to /oracle (onboarding_complete is true)");
+      } else {
+        console.log("⚠️ [Auth] Profile API returned status:", response.status);
+        // If profile fetch fails for new signups, route to onboarding
+        if (mode === "sign-up") {
+          console.log("🚀 [Auth] New signup - routing to /onboarding as fallback");
           router.push("/onboarding");
           return;
         }
       }
     } catch (e) {
+      console.error("❌ [Auth] Profile fetch error:", e);
       // If profile fetch fails for new signups, route to onboarding
       if (mode === "sign-up") {
+        console.log("🚀 [Auth] New signup with error - routing to /onboarding as fallback");
         router.push("/onboarding");
         return;
       }
     }
 
+    console.log("🚀 [Auth] Default routing to /oracle");
     router.push("/oracle");
     router.refresh();
   }
