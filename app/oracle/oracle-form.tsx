@@ -1,7 +1,8 @@
 "use client";
 
-import { FormEvent, useCallback, useEffect, useState } from "react";
+import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { createClient } from "@/lib/supabase/client";
+import { SourceGuidanceDrawer } from "@/app/components/source-guidance-drawer";
 
 const DEFAULT_SOURCE_SLUG = "bhagavad_gita";
 
@@ -84,6 +85,8 @@ export default function OracleForm() {
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [isGuidanceOpen, setIsGuidanceOpen] = useState(false);
+  const questionInputRef = useRef<HTMLTextAreaElement>(null);
 
   const activeSource =
     sources.find((source) => source.slug === activeSlug) ?? sources[0];
@@ -137,7 +140,7 @@ export default function OracleForm() {
   }, []);
 
   const selectSource = useCallback(
-    (slug: string) => {
+    (slug: string, shouldFocusInput: boolean = false) => {
       if (slug === activeSlug) {
         return;
       }
@@ -148,6 +151,13 @@ export default function OracleForm() {
       setNumber("");
       setResult(null);
       setError("");
+
+      // Focus question input if called from the guidance drawer
+      if (shouldFocusInput) {
+        setTimeout(() => {
+          questionInputRef.current?.focus();
+        }, 0);
+      }
     },
     [activeSlug],
   );
@@ -241,31 +251,41 @@ export default function OracleForm() {
           </h1>
         </div>
 
-        <div
-          role="tablist"
-          aria-label="Choose a source"
-          className="mb-6 inline-flex rounded-full border border-line-strong bg-surface-2 p-1"
-        >
-          {sources.map((source) => {
-            const isActive = source.slug === activeSlug;
+        <div className="mb-6 space-y-3">
+          <div
+            role="tablist"
+            aria-label="Choose a source"
+            className="inline-flex rounded-full border border-line-strong bg-surface-2 p-1"
+          >
+            {sources.map((source) => {
+              const isActive = source.slug === activeSlug;
 
-            return (
-              <button
-                key={source.slug}
-                type="button"
-                role="tab"
-                aria-selected={isActive}
-                onClick={() => selectSource(source.slug)}
-                className={`h-9 rounded-full px-5 text-sm font-medium transition-colors ${
-                  isActive
-                    ? "bg-accent text-on-accent"
-                    : "text-secondary hover:text-primary"
-                }`}
-              >
-                {source.title}
-              </button>
-            );
-          })}
+              return (
+                <button
+                  key={source.slug}
+                  type="button"
+                  role="tab"
+                  aria-selected={isActive}
+                  onClick={() => selectSource(source.slug)}
+                  className={`h-9 rounded-full px-5 text-sm font-medium transition-colors ${
+                    isActive
+                      ? "bg-accent text-on-accent"
+                      : "text-secondary hover:text-primary"
+                  }`}
+                >
+                  {source.title}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => setIsGuidanceOpen(true)}
+            className="text-xs text-secondary transition-colors hover:text-accent"
+          >
+            Not sure which to pick? Learn more →
+          </button>
         </div>
 
         <form
@@ -277,6 +297,7 @@ export default function OracleForm() {
               Your question
             </span>
             <textarea
+              ref={questionInputRef}
               value={question}
               onChange={(event) => setQuestion(event.target.value)}
               required
@@ -348,6 +369,14 @@ export default function OracleForm() {
           </article>
         ) : null}
       </section>
+
+      <SourceGuidanceDrawer
+        isOpen={isGuidanceOpen}
+        onClose={() => setIsGuidanceOpen(false)}
+        onSelectSource={(slug) => {
+          selectSource(slug, true);
+        }}
+      />
     </main>
   );
 }
