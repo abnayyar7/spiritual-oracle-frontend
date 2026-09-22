@@ -304,6 +304,9 @@ export default function OracleForm() {
               rows={5}
               className="mt-2 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none transition focus:border-accent"
             />
+            <p className="mt-2 text-xs text-muted">
+              Ask about life, purpose, relationships — not predictions or dates.
+            </p>
           </label>
 
           <label className="block">
