@@ -97,6 +97,30 @@ export default function AuthForm({
       return;
     }
 
+    // Check onboarding_complete flag to route appropriately
+    try {
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+      const response = await fetch(`${apiUrl}/users/profile`, {
+        headers: {
+          Authorization: `Bearer ${data.user?.id || ""}`,
+        },
+      });
+
+      if (response.ok) {
+        const profile = await response.json();
+        if (profile.onboarding_complete === false || profile.onboarding_complete === null) {
+          router.push("/onboarding");
+          return;
+        }
+      }
+    } catch (e) {
+      // If profile fetch fails for new signups, route to onboarding
+      if (mode === "sign-up") {
+        router.push("/onboarding");
+        return;
+      }
+    }
+
     router.push("/oracle");
     router.refresh();
   }

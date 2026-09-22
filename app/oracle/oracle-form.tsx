@@ -91,6 +91,7 @@ export default function OracleForm() {
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const [paramsProcessed, setParamsProcessed] = useState(false);
 
   const activeSource =
     sources.find((source) => source.slug === activeSlug) ?? sources[0];
@@ -142,6 +143,43 @@ export default function OracleForm() {
       cancelled = true;
     };
   }, []);
+
+  useEffect(() => {
+    if (paramsProcessed) return;
+
+    const source = searchParams.get("source");
+    const questionParam = searchParams.get("question");
+    const numberParam = searchParams.get("number");
+
+    if (source && questionParam && numberParam) {
+      setParamsProcessed(true);
+      setActiveSlug(source);
+      setQuestion(questionParam);
+      setNumber(numberParam);
+
+      // Clear URL params after processing
+      window.history.replaceState({}, document.title, "/oracle");
+    }
+  }, [searchParams, paramsProcessed]);
+
+  useEffect(() => {
+    if (!paramsProcessed || hasAutoSubmitted || !formRef.current) return;
+
+    // Auto-submit form when all params from onboarding are present
+    const source = searchParams.get("source");
+    const questionParam = searchParams.get("question");
+    const numberParam = searchParams.get("number");
+
+    if (source && questionParam && numberParam && question && number && activeSlug) {
+      setHasAutoSubmitted(true);
+      // Trigger form submission after a small delay to ensure state is updated
+      setTimeout(() => {
+        formRef.current?.dispatchEvent(
+          new Event("submit", { bubbles: true, cancelable: true })
+        );
+      }, 100);
+    }
+  }, [paramsProcessed, question, number, activeSlug, searchParams, hasAutoSubmitted]);
 
   const selectSource = useCallback(
     (slug: string, shouldFocusInput: boolean = false) => {
@@ -293,6 +331,7 @@ export default function OracleForm() {
         </div>
 
         <form
+          ref={formRef}
           onSubmit={handleSubmit}
           className="space-y-5 rounded-2xl border border-line bg-elevated p-6 shadow-sm sm:p-8"
         >
