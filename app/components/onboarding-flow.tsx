@@ -2,11 +2,11 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Info } from "lucide-react";
 import { SourceGuidanceDrawer } from "@/app/components/source-guidance-drawer";
 
 type Section = "welcome" | "questions";
-type SourceSlug = "bhagavad_gita" | "ramcharitmanas";
+type SourceSlug = "bhagavad_gita" | "ramcharitmanas" | "";
 
 interface OnboardingData {
   firstName: string;
@@ -29,7 +29,7 @@ export default function OnboardingFlow() {
   const [data, setData] = useState<OnboardingData>({
     firstName: "",
     ageRange: "",
-    sourceSlug: "bhagavad_gita",
+    sourceSlug: "", // No default source selected
     question: "",
     number: "",
   });
@@ -40,7 +40,7 @@ export default function OnboardingFlow() {
   const numberInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
-  const maxNumber = MAX_NUMBERS[data.sourceSlug];
+  const maxNumber = data.sourceSlug ? MAX_NUMBERS[data.sourceSlug as keyof typeof MAX_NUMBERS] : 0;
   const numberError =
     data.number && (isNaN(Number(data.number)) || Number(data.number) < 1 || Number(data.number) > maxNumber)
       ? `Number must be between 1 and ${maxNumber}`
@@ -294,9 +294,10 @@ export default function OnboardingFlow() {
                     <button
                       type="button"
                       onClick={() => setIsGuidanceOpen(true)}
-                      className="mt-3 text-xs text-secondary transition-colors hover:text-accent"
+                      className="mt-4 inline-flex items-center gap-1.5 rounded-lg border-b-2 border-accent px-2 py-1 text-sm font-medium text-accent transition-all hover:bg-accent/5 hover:shadow-sm active:scale-95"
                     >
-                      Not sure? Learn more →
+                      <Info size={16} />
+                      Not sure? Learn more
                     </button>
                   </label>
                 </div>
