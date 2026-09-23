@@ -22,33 +22,46 @@ export async function GET(request: NextRequest) {
       .single();
 
     // If profile doesn't exist, create a default one for new users
-    if (error && error.code === "PGRST116") {
-      console.log("📝 [Profile GET] Profile not found, creating default...");
-
-      const { data: newProfile, error: createError } = await supabase
-        .from("profiles")
-        .upsert({
-          id: user.id,
-          first_name: null,
-          age_range: null,
-          onboarding_complete: false,
-        })
-        .select()
-        .single();
-
-      if (createError) {
-        console.error("❌ [Profile GET] Failed to create profile:", createError);
-        return NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
-      }
-
-      data = newProfile;
-      console.log("✅ [Profile GET] Default profile created:", {
-        id: data.id,
-        onboarding_complete: data.onboarding_complete,
+    if (error) {
+      console.error("❌ [Profile GET] Query error details:", {
+        code: error.code,
+        message: error.message,
+        details: error.details,
       });
-    } else if (error) {
-      console.error("❌ [Profile GET] Query error:", error);
-      return NextResponse.json({ error: "Profile query failed" }, { status: 500 });
+
+      if (error.code === "PGRST116") {
+        console.log("📝 [Profile GET] Profile not found, creating default...");
+
+        const { data: newProfile, error: createError } = await supabase
+          .from("profiles")
+          .upsert({
+            id: user.id,
+            first_name: null,
+            age_range: null,
+            onboarding_complete: false,
+          })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error("❌ [Profile GET] Failed to create profile:", createError);
+          return NextResponse.json(
+            { error: "Failed to create profile", details: createError.message },
+            { status: 500 }
+          );
+        }
+
+        data = newProfile;
+        console.log("✅ [Profile GET] Default profile created:", {
+          id: data.id,
+          onboarding_complete: data.onboarding_complete,
+        });
+      } else {
+        return NextResponse.json(
+          { error: "Profile query failed", details: error.message },
+          { status: 500 }
+        );
+      }
     } else {
       console.log("✅ [Profile GET] Profile retrieved:", {
         id: data.id,
