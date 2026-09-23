@@ -415,17 +415,16 @@ export default function OnboardingFlow() {
       </main>
 
       {/* Hide nav during onboarding */}
-      <style jsx global>{`
-        ${section === "welcome" || section === "questions"
-          ? `
+      {(section === "welcome" || section === "questions") && (
+        <style jsx global>{`
           header {
             display: none !important;
           }
-        `
-          : ""}
-      `}</style>
+        `}</style>
+      )}
     </>
   );
+}
 
       <SourceGuidanceDrawer
         isOpen={isGuidanceOpen}
