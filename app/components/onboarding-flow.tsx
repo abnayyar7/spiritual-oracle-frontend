@@ -420,15 +420,6 @@ export default function OnboardingFlow() {
         onSelectSource={handleSourceSelect}
       />
 
-      {/* Hide nav during onboarding */}
-      {(section === "welcome" || section === "questions") && (
-        <style jsx global>{`
-          header {
-            display: none !important;
-          }
-        `}</style>
-      )}
-
       <style jsx>{`
         @keyframes fadeIn {
           from {
@@ -448,3 +439,6 @@ export default function OnboardingFlow() {
     </>
   );
 }
+
+// Hide header during onboarding using a route-specific approach
+// This is handled by checking the page in the Header component instead
