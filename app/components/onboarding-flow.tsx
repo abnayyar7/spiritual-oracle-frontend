@@ -414,6 +414,12 @@ export default function OnboardingFlow() {
         </section>
       </main>
 
+      <SourceGuidanceDrawer
+        isOpen={isGuidanceOpen}
+        onClose={() => setIsGuidanceOpen(false)}
+        onSelectSource={handleSourceSelect}
+      />
+
       {/* Hide nav during onboarding */}
       {(section === "welcome" || section === "questions") && (
         <style jsx global>{`
@@ -422,15 +428,6 @@ export default function OnboardingFlow() {
           }
         `}</style>
       )}
-    </>
-  );
-}
-
-      <SourceGuidanceDrawer
-        isOpen={isGuidanceOpen}
-        onClose={() => setIsGuidanceOpen(false)}
-        onSelectSource={handleSourceSelect}
-      />
 
       <style jsx>{`
         @keyframes fadeIn {
@@ -448,6 +445,6 @@ export default function OnboardingFlow() {
           animation: fadeIn 0.5s ease-out forwards;
         }
       `}</style>
-    </main>
+    </>
   );
 }
