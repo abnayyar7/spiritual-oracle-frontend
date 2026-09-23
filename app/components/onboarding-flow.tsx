@@ -25,6 +25,7 @@ const MAX_NUMBERS = {
 export default function OnboardingFlow() {
   const router = useRouter();
   const [section, setSection] = useState<Section>("welcome");
+  const [currentStep, setCurrentStep] = useState<number>(1); // 1-5, controls field visibility
   const [data, setData] = useState<OnboardingData>({
     firstName: "",
     ageRange: "",
@@ -34,28 +35,16 @@ export default function OnboardingFlow() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGuidanceOpen, setIsGuidanceOpen] = useState(false);
-  const [visibleFields, setVisibleFields] = useState<number>(0);
   const [welcomeStep, setWelcomeStep] = useState(0);
-  const [nameBlurred, setNameBlurred] = useState(false);
-  const [questionBlurred, setQuestionBlurred] = useState(false);
-  const [nameDebounceTimer, setNameDebounceTimer] = useState<NodeJS.Timeout | null>(null);
-  const [questionDebounceTimer, setQuestionDebounceTimer] = useState<NodeJS.Timeout | null>(null);
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const numberInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   const maxNumber = MAX_NUMBERS[data.sourceSlug];
   const numberError =
     data.number && (isNaN(Number(data.number)) || Number(data.number) < 1 || Number(data.number) > maxNumber)
       ? `Number must be between 1 and ${maxNumber}`
       : "";
-
-  const isField1Complete = data.firstName.trim().length >= 2;
-  const isField1ReadyToAdvance = isField1Complete && nameBlurred;
-  const isField2Complete = true; // Optional field
-  const isField3Complete = data.sourceSlug.length > 0;
-  const isField4Complete = data.question.trim().length >= 10;
-  const isField4ReadyToAdvance = isField4Complete && questionBlurred;
-  const isField5Complete = !numberError && data.number.length > 0;
 
   useEffect(() => {
     if (section === "welcome") {
@@ -70,49 +59,9 @@ export default function OnboardingFlow() {
 
   useEffect(() => {
     if (section === "questions") {
-      setVisibleFields(1);
+      setCurrentStep(1); // Reset to step 1 when entering questions
     }
   }, [section]);
-
-  useEffect(() => {
-    if (section !== "questions") return;
-
-    // Field 2 appears after Field 1 is complete AND blurred (or 1s pause)
-    if (isField1ReadyToAdvance && visibleFields < 2) {
-      const timer = setTimeout(() => setVisibleFields(2), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isField1ReadyToAdvance, visibleFields, section]);
-
-  useEffect(() => {
-    if (section !== "questions") return;
-
-    // Field 3 appears after age is selected
-    if (isField2Complete && isField3Complete && visibleFields < 3) {
-      const timer = setTimeout(() => setVisibleFields(3), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isField2Complete, isField3Complete, visibleFields, section]);
-
-  useEffect(() => {
-    if (section !== "questions") return;
-
-    // Field 4 appears after source is selected
-    if (isField3Complete && visibleFields < 4) {
-      const timer = setTimeout(() => setVisibleFields(4), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isField3Complete, visibleFields, section]);
-
-  useEffect(() => {
-    if (section !== "questions") return;
-
-    // Field 5 appears after question is complete AND blurred (or 1s pause)
-    if (isField4ReadyToAdvance && visibleFields < 5) {
-      const timer = setTimeout(() => setVisibleFields(5), 300);
-      return () => clearTimeout(timer);
-    }
-  }, [isField4ReadyToAdvance, visibleFields, section]);
 
   const handleBeginClick = () => {
     setSection("questions");
@@ -121,54 +70,54 @@ export default function OnboardingFlow() {
   const handleSourceSelect = (slug: string) => {
     setData({ ...data, sourceSlug: slug as SourceSlug });
     setIsGuidanceOpen(false);
-  };
-
-  const handleNameChange = (value: string) => {
-    setData({ ...data, firstName: value });
-
-    // Clear existing debounce timer
-    if (nameDebounceTimer) clearTimeout(nameDebounceTimer);
-
-    // Set new debounce timer for 1 second pause detection
-    if (value.trim().length >= 2) {
-      const timer = setTimeout(() => {
-        setNameBlurred(true);
-      }, 1000);
-      setNameDebounceTimer(timer);
+    // Advance to step 4 when source is selected
+    if (currentStep === 3) {
+      setTimeout(() => setCurrentStep(4), 300);
     }
   };
 
   const handleNameBlur = () => {
-    if (nameDebounceTimer) clearTimeout(nameDebounceTimer);
-    if (data.firstName.trim().length >= 2) {
-      setNameBlurred(true);
+    // Step 1→2: advance only if name has 2+ characters
+    if (data.firstName.trim().length >= 2 && currentStep === 1) {
+      setTimeout(() => setCurrentStep(2), 300);
     }
   };
 
-  const handleQuestionChange = (value: string) => {
-    setData({ ...data, question: value });
+  const handleNameKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Enter key on name field advances to step 2 if valid
+    if (e.key === "Enter" && data.firstName.trim().length >= 2 && currentStep === 1) {
+      setTimeout(() => setCurrentStep(2), 300);
+    }
+  };
 
-    // Clear existing debounce timer
-    if (questionDebounceTimer) clearTimeout(questionDebounceTimer);
-
-    // Set new debounce timer for 1 second pause detection
-    if (value.trim().length >= 10) {
-      const timer = setTimeout(() => {
-        setQuestionBlurred(true);
-      }, 1000);
-      setQuestionDebounceTimer(timer);
+  const handleAgeSelect = (range: string) => {
+    setData({ ...data, ageRange: range });
+    // Step 2→3: advance immediately when age is selected
+    if (currentStep === 2) {
+      setTimeout(() => setCurrentStep(3), 300);
     }
   };
 
   const handleQuestionBlur = () => {
-    if (questionDebounceTimer) clearTimeout(questionDebounceTimer);
-    if (data.question.trim().length >= 10) {
-      setQuestionBlurred(true);
+    // Step 4→5: advance only if question has 10+ characters
+    if (data.question.trim().length >= 10 && currentStep === 4) {
+      setTimeout(() => setCurrentStep(5), 300);
+    }
+  };
+
+  const handleQuestionKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    // Enter key on question field advances to step 5 if valid
+    if (e.key === "Enter" && data.question.trim().length >= 10 && currentStep === 4) {
+      setTimeout(() => setCurrentStep(5), 300);
     }
   };
 
   const handleSubmit = async () => {
-    if (!isField1Complete || !isField3Complete || !isField4Complete || !isField5Complete) {
+    // Validate all required fields
+    if (!data.firstName.trim() || !data.sourceSlug || !data.question.trim() || !data.number) {
+      return;
+    }
+    if (numberError) {
       return;
     }
 
@@ -258,41 +207,46 @@ export default function OnboardingFlow() {
               <div className="mb-12">
                 <div className="mb-4 flex items-center justify-between">
                   <span className="text-xs font-medium uppercase tracking-widest text-muted">
-                    Step {Math.min(visibleFields, 5)} of 5
+                    Step {currentStep} of 5
                   </span>
-                  <span className="text-xs text-muted">{Math.round((Math.min(visibleFields, 5) / 5) * 100)}%</span>
+                  <span className="text-xs text-muted">{Math.round((currentStep / 5) * 100)}%</span>
                 </div>
                 <div className="h-1 w-full overflow-hidden rounded-full bg-surface-2">
                   <div
                     className="h-full bg-accent transition-all duration-300"
-                    style={{ width: `${(Math.min(visibleFields, 5) / 5) * 100}%` }}
+                    style={{ width: `${(currentStep / 5) * 100}%` }}
                   />
                 </div>
               </div>
 
-              {/* Field 1: First Name */}
-              {visibleFields >= 1 && (
+              {/* Field 1: First Name — visible at step 1+ */}
+              {currentStep >= 1 && (
                 <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">What should we call you?</span>
                     <input
+                      ref={nameInputRef}
                       type="text"
                       value={data.firstName}
-                      onChange={(e) => handleNameChange(e.target.value)}
+                      onChange={(e) => setData({ ...data, firstName: e.target.value })}
                       onBlur={handleNameBlur}
+                      onKeyDown={handleNameKeyDown}
                       placeholder="Your first name"
                       className="mt-3 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none transition focus:border-accent"
                       autoFocus
                     />
-                    {isField1Complete && !isField1ReadyToAdvance && (
-                      <p className="mt-2 text-xs text-muted">Confirm by pressing Enter or clicking away</p>
+                    {data.firstName.trim().length > 0 && data.firstName.trim().length < 2 && (
+                      <p className="mt-2 text-xs text-muted">At least 2 characters</p>
+                    )}
+                    {data.firstName.trim().length >= 2 && currentStep === 1 && (
+                      <p className="mt-2 text-xs text-muted">Press Enter or click away to continue</p>
                     )}
                   </label>
                 </div>
               )}
 
-              {/* Field 2: Age Range */}
-              {visibleFields >= 2 && (
+              {/* Field 2: Age Range — visible at step 2+ */}
+              {currentStep >= 2 && (
                 <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">How old are you?</span>
@@ -300,9 +254,7 @@ export default function OnboardingFlow() {
                       {AGE_RANGES.map((range) => (
                         <button
                           key={range}
-                          onClick={() => {
-                            setData({ ...data, ageRange: range });
-                          }}
+                          onClick={() => handleAgeSelect(range)}
                           className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
                             data.ageRange === range
                               ? "bg-accent text-on-accent shadow-sm"
@@ -317,8 +269,8 @@ export default function OnboardingFlow() {
                 </div>
               )}
 
-              {/* Field 3: Source Selection */}
-              {visibleFields >= 3 && (
+              {/* Field 3: Source Selection — visible at step 3+ */}
+              {currentStep >= 3 && (
                 <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">
@@ -328,7 +280,7 @@ export default function OnboardingFlow() {
                       {["bhagavad_gita", "ramcharitmanas"].map((slug) => (
                         <button
                           key={slug}
-                          onClick={() => setData({ ...data, sourceSlug: slug as SourceSlug })}
+                          onClick={() => handleSourceSelect(slug)}
                           className={`h-9 rounded-full px-5 text-sm font-medium transition-colors ${
                             data.sourceSlug === slug
                               ? "bg-accent text-on-accent"
@@ -350,32 +302,37 @@ export default function OnboardingFlow() {
                 </div>
               )}
 
-              {/* Field 4: Question */}
-              {visibleFields >= 4 && (
+              {/* Field 4: Question — visible at step 4+ */}
+              {currentStep >= 4 && (
                 <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">What's on your mind today?</span>
                     <textarea
                       ref={questionInputRef}
                       value={data.question}
-                      onChange={(e) => handleQuestionChange(e.target.value)}
+                      onChange={(e) => setData({ ...data, question: e.target.value })}
                       onBlur={handleQuestionBlur}
+                      onKeyDown={handleQuestionKeyDown}
                       placeholder="Share what's on your heart..."
                       rows={4}
                       className="mt-3 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none transition focus:border-accent"
+                      autoFocus
                     />
                     <p className="mt-2 text-xs text-muted">
                       Ask about life, purpose, relationships — not predictions or dates.
                     </p>
-                    {isField4Complete && !isField4ReadyToAdvance && (
-                      <p className="mt-2 text-xs text-muted">Confirm by pressing Enter or clicking away</p>
+                    {data.question.trim().length > 0 && data.question.trim().length < 10 && (
+                      <p className="mt-2 text-xs text-muted">At least 10 characters</p>
+                    )}
+                    {data.question.trim().length >= 10 && currentStep === 4 && (
+                      <p className="mt-2 text-xs text-muted">Press Enter or click away to continue</p>
                     )}
                   </label>
                 </div>
               )}
 
-              {/* Field 5: Number */}
-              {visibleFields >= 5 && (
+              {/* Field 5: Number — visible at step 5+ */}
+              {currentStep >= 5 && (
                 <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">
@@ -397,8 +354,8 @@ export default function OnboardingFlow() {
                 </div>
               )}
 
-              {/* Submit Button */}
-              {visibleFields >= 5 && !numberError && data.number && (
+              {/* Submit Button — visible at step 5 when number is valid */}
+              {currentStep >= 5 && !numberError && data.number && (
                 <div className="animate-fade-in mt-12 space-y-4">
                   <button
                     onClick={handleSubmit}
