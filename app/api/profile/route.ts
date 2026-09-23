@@ -15,21 +15,46 @@ export async function GET(request: NextRequest) {
 
     const supabase = createClient();
 
-    const { data, error } = await supabase
+    let { data, error } = await supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .single();
 
-    if (error) {
-      console.error("❌ [Profile GET] Query error:", error);
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
-    }
+    // If profile doesn't exist, create a default one for new users
+    if (error && error.code === "PGRST116") {
+      console.log("📝 [Profile GET] Profile not found, creating default...");
 
-    console.log("✅ [Profile GET] Profile retrieved:", {
-      id: data.id,
-      onboarding_complete: data.onboarding_complete,
-    });
+      const { data: newProfile, error: createError } = await supabase
+        .from("profiles")
+        .upsert({
+          id: user.id,
+          first_name: null,
+          age_range: null,
+          onboarding_complete: false,
+        })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error("❌ [Profile GET] Failed to create profile:", createError);
+        return NextResponse.json({ error: "Failed to create profile" }, { status: 500 });
+      }
+
+      data = newProfile;
+      console.log("✅ [Profile GET] Default profile created:", {
+        id: data.id,
+        onboarding_complete: data.onboarding_complete,
+      });
+    } else if (error) {
+      console.error("❌ [Profile GET] Query error:", error);
+      return NextResponse.json({ error: "Profile query failed" }, { status: 500 });
+    } else {
+      console.log("✅ [Profile GET] Profile retrieved:", {
+        id: data.id,
+        onboarding_complete: data.onboarding_complete,
+      });
+    }
 
     return NextResponse.json(data);
   } catch (error) {
