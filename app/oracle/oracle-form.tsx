@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { SourceGuidanceDrawer } from "@/app/components/source-guidance-drawer";
 
-const DEFAULT_SOURCE_SLUG = "bhagavad_gita";
 
 // Only used until GET /sources responds, and as a floor if it fails. The
 // backend performs the real, authoritative range check regardless.
@@ -81,11 +80,12 @@ export default function OracleForm() {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const [sources, setSources] = useState<Source[]>(FALLBACK_SOURCES);
-  const [activeSlug, setActiveSlug] = useState(DEFAULT_SOURCE_SLUG);
+  const [activeSlug, setActiveSlug] = useState("");
   const [question, setQuestion] = useState("");
   const [number, setNumber] = useState("");
   const [result, setResult] = useState<Result | null>(null);
   const [error, setError] = useState("");
+  const [sourceError, setSourceError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isGuidanceOpen, setIsGuidanceOpen] = useState(false);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
@@ -93,13 +93,12 @@ export default function OracleForm() {
   const formRef = useRef<HTMLFormElement>(null);
   const [paramsProcessed, setParamsProcessed] = useState(false);
 
-  const activeSource =
-    sources.find((source) => source.slug === activeSlug) ?? sources[0];
+  const activeSource = sources.find((source) => source.slug === activeSlug);
   const maxNumber = activeSource?.total_units ?? 1;
 
   const numberError = getNumberError(number, maxNumber);
   const isSubmitDisabled =
-    isLoading || !question || !number || Boolean(numberError);
+    isLoading || !question || !number || !activeSlug || Boolean(numberError);
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -127,11 +126,6 @@ export default function OracleForm() {
         }
 
         setSources(data);
-
-        // Keep the default pinned to the Gita when it is present.
-        if (!data.some((source) => source.slug === DEFAULT_SOURCE_SLUG)) {
-          setActiveSlug(data[0].slug);
-        }
       } catch {
         // Non-fatal: the fallback source keeps the form usable.
       }
@@ -183,12 +177,9 @@ export default function OracleForm() {
 
   const selectSource = useCallback(
     (slug: string, shouldFocusInput: boolean = false) => {
-      if (slug === activeSlug) {
-        return;
-      }
-
       // Switching source invalidates everything tied to the old one.
       setActiveSlug(slug);
+      setSourceError(""); // Clear source error when source is selected
       setQuestion("");
       setNumber("");
       setResult(null);
@@ -201,13 +192,19 @@ export default function OracleForm() {
         }, 0);
       }
     },
-    [activeSlug],
+    [],
   );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setError("");
     setResult(null);
+
+    // Validate source selection
+    if (!activeSlug) {
+      setSourceError("Please select a text first");
+      return;
+    }
 
     // Defense in depth: re-validate here too, in case the disabled state on
     // the submit button was bypassed (e.g. via DOM manipulation in devtools).
@@ -321,12 +318,16 @@ export default function OracleForm() {
             })}
           </div>
 
+          {sourceError && (
+            <p className="text-sm text-danger">{sourceError}</p>
+          )}
+
           <button
             type="button"
             onClick={() => setIsGuidanceOpen(true)}
-            className="text-xs text-secondary transition-colors hover:text-accent"
+            className="text-sm text-accent transition-all hover:underline"
           >
-            Not sure which to pick? Learn more →
+            Not sure? Learn more →
           </button>
         </div>
 
