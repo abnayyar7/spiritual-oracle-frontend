@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { ChevronRight, Info } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { SourceGuidanceDrawer } from "@/app/components/source-guidance-drawer";
 
 type Section = "welcome" | "questions";
@@ -35,7 +36,7 @@ export default function OnboardingFlow() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGuidanceOpen, setIsGuidanceOpen] = useState(false);
-  const [welcomeStep, setWelcomeStep] = useState(0);
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const numberInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
@@ -46,16 +47,14 @@ export default function OnboardingFlow() {
       ? `Number must be between 1 and ${maxNumber}`
       : "";
 
+  // Detect prefers-reduced-motion
   useEffect(() => {
-    if (section === "welcome") {
-      const timer1 = setTimeout(() => setWelcomeStep(1), 300);
-      const timer2 = setTimeout(() => setWelcomeStep(2), 1200);
-      return () => {
-        clearTimeout(timer1);
-        clearTimeout(timer2);
-      };
-    }
-  }, [section]);
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+    const listener = (e: MediaQueryListEvent) => setPrefersReducedMotion(e.matches);
+    mediaQuery.addEventListener("change", listener);
+    return () => mediaQuery.removeEventListener("change", listener);
+  }, []);
 
   useEffect(() => {
     if (section === "questions") {
@@ -160,42 +159,112 @@ export default function OnboardingFlow() {
           {/* Welcome Section */}
           {section === "welcome" && (
             <div className="relative flex h-[calc(100dvh-8rem)] flex-col items-center justify-center">
-              {/* Decorative background: concentric rings in gold */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="absolute h-40 w-40 rounded-full border border-accent/20" />
-                <div className="absolute h-56 w-56 rounded-full border border-accent/15" />
-                <div className="absolute h-72 w-72 rounded-full border border-accent/10" />
-              </div>
+              {/* Decorative background: concentric rings in gold — fade in slowly */}
+              <motion.div
+                className="absolute inset-0 flex items-center justify-center"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  duration: prefersReducedMotion ? 0 : 2,
+                  ease: "easeOut",
+                }}
+              >
+                <motion.div
+                  className="absolute h-40 w-40 rounded-full border border-accent/20"
+                  animate={prefersReducedMotion ? {} : { rotate: 360 }}
+                  transition={{
+                    duration: 120,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                />
+                <motion.div
+                  className="absolute h-56 w-56 rounded-full border border-accent/15"
+                  animate={prefersReducedMotion ? {} : { rotate: -360 }}
+                  transition={{
+                    duration: 120,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                />
+                <motion.div
+                  className="absolute h-72 w-72 rounded-full border border-accent/10"
+                  animate={prefersReducedMotion ? {} : { rotate: 360 }}
+                  transition={{
+                    duration: 120,
+                    repeat: Infinity,
+                    ease: "linear",
+                  }}
+                />
+              </motion.div>
 
               {/* Content */}
               <div className="relative z-10 space-y-8 text-center">
-                <div>
+                {/* Title — fade + rise with 0.3s delay */}
+                <motion.div
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.8,
+                    ease: "easeOut",
+                    delay: prefersReducedMotion ? 0 : 0.3,
+                  }}
+                >
                   <h1 className="font-display text-5xl font-light text-primary sm:text-6xl">
                     Welcome to Spiritual Oracle
                   </h1>
-                </div>
+                </motion.div>
 
-                {welcomeStep >= 1 && (
-                  <div className="animate-fade-in space-y-6">
-                    <p className="text-lg text-secondary leading-relaxed">
-                      For centuries, seekers have opened sacred texts at random to find guidance.
-                      <br />
-                      Now it's your turn.
-                    </p>
-                  </div>
-                )}
+                {/* Subtitle — fade + rise with 1.0s delay */}
+                <motion.div
+                  className="space-y-6"
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.8,
+                    ease: "easeOut",
+                    delay: prefersReducedMotion ? 0 : 1.0,
+                  }}
+                >
+                  <p className="text-lg text-secondary leading-relaxed">
+                    For centuries, seekers have opened sacred texts at random to find guidance.
+                    <br />
+                    Now it's your turn.
+                  </p>
+                </motion.div>
 
-                {welcomeStep >= 2 && (
-                  <div className="animate-fade-in mt-12 flex justify-center">
-                    <button
-                      onClick={handleBeginClick}
-                      className="inline-flex items-center gap-2 rounded-full bg-accent px-8 py-3 text-sm font-medium text-on-accent transition-all hover:opacity-90 hover:shadow-lg active:scale-95"
-                    >
-                      Let's Begin
-                      <ChevronRight size={18} />
-                    </button>
-                  </div>
-                )}
+                {/* Button — fade + rise with 1.8s delay + scale pulse */}
+                <motion.div
+                  className="mt-12 flex justify-center"
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 30 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.8,
+                    ease: "easeOut",
+                    delay: prefersReducedMotion ? 0 : 1.8,
+                  }}
+                >
+                  <motion.button
+                    onClick={handleBeginClick}
+                    className="inline-flex items-center gap-2 rounded-full bg-accent px-8 py-3 text-sm font-medium text-on-accent transition-all hover:opacity-90 hover:shadow-lg active:scale-95"
+                    animate={
+                      prefersReducedMotion
+                        ? {}
+                        : {
+                            scale: [1, 1.02, 1],
+                          }
+                    }
+                    transition={{
+                      duration: 2,
+                      repeat: Infinity,
+                      repeatType: "loop",
+                      ease: "easeInOut",
+                    }}
+                  >
+                    Let's Begin
+                    <ChevronRight size={18} />
+                  </motion.button>
+                </motion.div>
               </div>
             </div>
           )}
@@ -219,9 +288,20 @@ export default function OnboardingFlow() {
                 </div>
               </div>
 
-              {/* Field 1: First Name — visible at step 1+ */}
-              {currentStep >= 1 && (
-                <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
+              <AnimatePresence mode="wait">
+                {/* Field 1: First Name — visible at step 1+ */}
+                {currentStep >= 1 && (
+                  <motion.div
+                    key="field-name"
+                    className="space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm"
+                    initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -20 }}
+                    transition={{
+                      duration: prefersReducedMotion ? 0 : 0.5,
+                      ease: "easeOut",
+                    }}
+                  >
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">What should we call you?</span>
                     <input
@@ -242,12 +322,22 @@ export default function OnboardingFlow() {
                       <p className="mt-2 text-xs text-muted">Press Enter or click away to continue</p>
                     )}
                   </label>
-                </div>
+                </motion.div>
               )}
 
               {/* Field 2: Age Range — visible at step 2+ */}
               {currentStep >= 2 && (
-                <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
+                <motion.div
+                  key="field-age"
+                  className="space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm"
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -20 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    ease: "easeOut",
+                  }}
+                >
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">How old are you?</span>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -285,12 +375,22 @@ export default function OnboardingFlow() {
                       ))}
                     </div>
                   </label>
-                </div>
+                </motion.div>
               )}
 
               {/* Field 3: Source Selection — visible at step 3+ */}
               {currentStep >= 3 && (
-                <div className="animate-fade-in space-y-6 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
+                <motion.div
+                  key="field-source"
+                  className="space-y-6 rounded-2xl border border-line bg-elevated p-6 shadow-sm"
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -20 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    ease: "easeOut",
+                  }}
+                >
                   <div>
                     <span className="block text-sm font-medium text-secondary">
                       Which text speaks to your question?
@@ -367,12 +467,22 @@ export default function OnboardingFlow() {
                       </button>
                     </div>
                   </div>
-                </div>
+                </motion.div>
               )}
 
               {/* Field 4: Question — visible at step 4+ */}
               {currentStep >= 4 && (
-                <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
+                <motion.div
+                  key="field-question"
+                  className="space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm"
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -20 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    ease: "easeOut",
+                  }}
+                >
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">What's on your mind today?</span>
                     <textarea
@@ -396,12 +506,22 @@ export default function OnboardingFlow() {
                       <p className="mt-2 text-xs text-muted">Press Enter or click away to continue</p>
                     )}
                   </label>
-                </div>
+                </motion.div>
               )}
 
               {/* Field 5: Number — visible at step 5+ */}
               {currentStep >= 5 && (
-                <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
+                <motion.div
+                  key="field-number"
+                  className="space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm"
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -20 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    ease: "easeOut",
+                  }}
+                >
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">
                       Close your eyes. Take a breath. Think of a number between 1 and {maxNumber}.
@@ -419,12 +539,22 @@ export default function OnboardingFlow() {
                     />
                     {numberError && <p className="mt-2 text-xs text-caution">{numberError}</p>}
                   </label>
-                </div>
+                </motion.div>
               )}
 
               {/* Submit Button — visible at step 5 when number is valid */}
               {currentStep >= 5 && !numberError && data.number && (
-                <div className="animate-fade-in mt-12 space-y-4">
+                <motion.div
+                  key="button-submit"
+                  className="mt-12 space-y-4"
+                  initial={{ opacity: 0, y: prefersReducedMotion ? 0 : 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: prefersReducedMotion ? 0 : -20 }}
+                  transition={{
+                    duration: prefersReducedMotion ? 0 : 0.5,
+                    ease: "easeOut",
+                  }}
+                >
                   <button
                     onClick={handleSubmit}
                     disabled={isSubmitting}
@@ -432,8 +562,9 @@ export default function OnboardingFlow() {
                   >
                     {isSubmitting ? "Seeking guidance..." : "Seek Guidance →"}
                   </button>
-                </div>
+                </motion.div>
               )}
+              </AnimatePresence>
             </div>
           )}
         </section>
