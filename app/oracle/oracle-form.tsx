@@ -291,11 +291,8 @@ export default function OracleForm() {
         </div>
 
         <div className="mb-6 space-y-3">
-          <div
-            role="tablist"
-            aria-label="Choose a source"
-            className="inline-flex rounded-full border border-line-strong bg-surface-2 p-1"
-          >
+          {/* Source selector — two separate buttons, not in a container */}
+          <div className="flex gap-5">
             {sources.map((source) => {
               const isActive = source.slug === activeSlug;
 
@@ -303,14 +300,30 @@ export default function OracleForm() {
                 <button
                   key={source.slug}
                   type="button"
-                  role="tab"
-                  aria-selected={isActive}
                   onClick={() => selectSource(source.slug)}
-                  className={`h-9 rounded-full px-5 text-sm font-medium transition-colors ${
-                    isActive
-                      ? "bg-accent text-on-accent"
-                      : "text-secondary hover:text-primary"
-                  }`}
+                  style={{
+                    border: `1px solid ${isActive ? "#D4AF37" : "#6B7280"}`,
+                    backgroundColor: isActive ? "#D4AF37" : "transparent",
+                    color: isActive ? "#0F0D0A" : "#C9BFA8",
+                    borderRadius: "9999px",
+                    padding: "12px 32px",
+                    fontSize: "14px",
+                    fontWeight: "500",
+                    cursor: "pointer",
+                    transition: "all 200ms",
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.borderColor = "#D4AF37";
+                      e.currentTarget.style.color = "#E5DDD0";
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isActive) {
+                      e.currentTarget.style.borderColor = "#6B7280";
+                      e.currentTarget.style.color = "#C9BFA8";
+                    }
+                  }}
                 >
                   {source.title}
                 </button>
