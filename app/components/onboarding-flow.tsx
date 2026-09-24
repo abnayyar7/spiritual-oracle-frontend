@@ -271,34 +271,37 @@ export default function OnboardingFlow() {
 
               {/* Field 3: Source Selection — visible at step 3+ */}
               {currentStep >= 3 && (
-                <div className="animate-fade-in space-y-3 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
+                <div className="animate-fade-in space-y-6 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
                   <label className="block">
                     <span className="text-sm font-medium text-secondary">
                       Which text speaks to your question?
                     </span>
-                    <div className="mt-3 inline-flex rounded-full border border-line-strong bg-surface-2 p-1">
+                    {/* Source buttons — centered with even spacing */}
+                    <div className="mt-5 flex justify-center gap-4">
                       {["bhagavad_gita", "ramcharitmanas"].map((slug) => (
                         <button
                           key={slug}
                           onClick={() => handleSourceSelect(slug)}
-                          className={`h-9 rounded-full px-5 text-sm font-medium transition-colors ${
+                          className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
                             data.sourceSlug === slug
-                              ? "bg-accent text-on-accent"
-                              : "text-secondary hover:text-primary"
+                              ? "bg-accent text-on-accent shadow-sm"
+                              : "border border-line text-secondary hover:border-accent hover:bg-accent/5"
                           }`}
                         >
                           {slug === "bhagavad_gita" ? "Bhagavad Gita" : "Ramcharitmanas"}
                         </button>
                       ))}
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsGuidanceOpen(true)}
-                      className="mt-4 inline-flex items-center gap-1.5 rounded-lg border-b-2 border-accent px-2 py-1 text-sm font-medium text-accent transition-all hover:bg-accent/5 hover:shadow-sm active:scale-95"
-                    >
-                      <Info size={16} />
-                      Not sure? Learn more
-                    </button>
+                    {/* Learn more link — simple text link styling */}
+                    <div className="mt-5 text-center">
+                      <button
+                        type="button"
+                        onClick={() => setIsGuidanceOpen(true)}
+                        className="text-sm text-accent transition-all hover:underline active:opacity-75"
+                      >
+                        Not sure? Learn more
+                      </button>
+                    </div>
                   </label>
                 </div>
               )}
