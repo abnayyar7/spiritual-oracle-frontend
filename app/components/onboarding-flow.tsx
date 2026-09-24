@@ -276,31 +276,27 @@ export default function OnboardingFlow() {
                     <span className="block text-sm font-medium text-secondary">
                       Which text speaks to your question?
                     </span>
-                    {/* Source buttons — centered with generous spacing */}
-                    <div className="mt-6 flex justify-center gap-6">
-                      {/* Bhagavad Gita button */}
+                    {/* Source buttons — centered with same styling as age buttons */}
+                    <div className="mt-5 flex justify-center gap-4">
                       <button
                         onClick={() => handleSourceSelect("bhagavad_gita")}
                         type="button"
-                        style={{
-                          border: `2px solid ${data.sourceSlug === "bhagavad_gita" ? "#d4af37" : "#6b7280"}`,
-                          backgroundColor: data.sourceSlug === "bhagavad_gita" ? "#d4af37" : "transparent",
-                          color: data.sourceSlug === "bhagavad_gita" ? "#1f1f1f" : "#9ca3af",
-                        }}
-                        className="rounded-full px-8 py-3 text-sm font-medium transition-all duration-200 hover:border-amber-400 hover:bg-amber-400/20 hover:text-gray-100"
+                        className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
+                          data.sourceSlug === "bhagavad_gita"
+                            ? "bg-accent text-on-accent shadow-sm"
+                            : "border border-line text-secondary hover:border-accent hover:text-primary"
+                        }`}
                       >
                         Bhagavad Gita
                       </button>
-                      {/* Ramcharitmanas button */}
                       <button
                         onClick={() => handleSourceSelect("ramcharitmanas")}
                         type="button"
-                        style={{
-                          border: `2px solid ${data.sourceSlug === "ramcharitmanas" ? "#d4af37" : "#6b7280"}`,
-                          backgroundColor: data.sourceSlug === "ramcharitmanas" ? "#d4af37" : "transparent",
-                          color: data.sourceSlug === "ramcharitmanas" ? "#1f1f1f" : "#9ca3af",
-                        }}
-                        className="rounded-full px-8 py-3 text-sm font-medium transition-all duration-200 hover:border-amber-400 hover:bg-amber-400/20 hover:text-gray-100"
+                        className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
+                          data.sourceSlug === "ramcharitmanas"
+                            ? "bg-accent text-on-accent shadow-sm"
+                            : "border border-line text-secondary hover:border-accent hover:text-primary"
+                        }`}
                       >
                         Ramcharitmanas
                       </button>
