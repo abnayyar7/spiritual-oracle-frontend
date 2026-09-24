@@ -276,27 +276,63 @@ export default function OnboardingFlow() {
                     <span className="block text-sm font-medium text-secondary">
                       Which text speaks to your question?
                     </span>
-                    {/* Source buttons — centered with same styling as age buttons */}
+                    {/* Source buttons — centered with inline styles (Tailwind failed after 5 attempts) */}
                     <div className="mt-5 flex justify-center gap-4">
                       <button
                         onClick={() => handleSourceSelect("bhagavad_gita")}
                         type="button"
-                        className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
-                          data.sourceSlug === "bhagavad_gita"
-                            ? "bg-accent text-on-accent shadow-sm"
-                            : "border border-line text-secondary hover:border-accent hover:text-primary"
-                        }`}
+                        style={{
+                          border: `1px solid ${data.sourceSlug === "bhagavad_gita" ? "#D4AF37" : "#6B7280"}`,
+                          backgroundColor: data.sourceSlug === "bhagavad_gita" ? "#D4AF37" : "transparent",
+                          color: data.sourceSlug === "bhagavad_gita" ? "#0F0D0A" : "#C9BFA8",
+                          borderRadius: "9999px",
+                          padding: "10px 24px",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          cursor: "pointer",
+                          transition: "all 200ms",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (data.sourceSlug !== "bhagavad_gita") {
+                            e.currentTarget.style.borderColor = "#D4AF37";
+                            e.currentTarget.style.color = "#E5DDD0";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (data.sourceSlug !== "bhagavad_gita") {
+                            e.currentTarget.style.borderColor = "#6B7280";
+                            e.currentTarget.style.color = "#C9BFA8";
+                          }
+                        }}
                       >
                         Bhagavad Gita
                       </button>
                       <button
                         onClick={() => handleSourceSelect("ramcharitmanas")}
                         type="button"
-                        className={`rounded-full px-6 py-2.5 text-sm font-medium transition-all ${
-                          data.sourceSlug === "ramcharitmanas"
-                            ? "bg-accent text-on-accent shadow-sm"
-                            : "border border-line text-secondary hover:border-accent hover:text-primary"
-                        }`}
+                        style={{
+                          border: `1px solid ${data.sourceSlug === "ramcharitmanas" ? "#D4AF37" : "#6B7280"}`,
+                          backgroundColor: data.sourceSlug === "ramcharitmanas" ? "#D4AF37" : "transparent",
+                          color: data.sourceSlug === "ramcharitmanas" ? "#0F0D0A" : "#C9BFA8",
+                          borderRadius: "9999px",
+                          padding: "10px 24px",
+                          fontSize: "14px",
+                          fontWeight: "500",
+                          cursor: "pointer",
+                          transition: "all 200ms",
+                        }}
+                        onMouseEnter={(e) => {
+                          if (data.sourceSlug !== "ramcharitmanas") {
+                            e.currentTarget.style.borderColor = "#D4AF37";
+                            e.currentTarget.style.color = "#E5DDD0";
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (data.sourceSlug !== "ramcharitmanas") {
+                            e.currentTarget.style.borderColor = "#6B7280";
+                            e.currentTarget.style.color = "#C9BFA8";
+                          }
+                        }}
                       >
                         Ramcharitmanas
                       </button>
