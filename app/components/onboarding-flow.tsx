@@ -272,27 +272,34 @@ export default function OnboardingFlow() {
               {/* Field 3: Source Selection — visible at step 3+ */}
               {currentStep >= 3 && (
                 <div className="animate-fade-in space-y-6 rounded-2xl border border-line bg-elevated p-6 shadow-sm">
-                  <label className="block">
-                    <span className="text-sm font-medium text-secondary">
+                  <div>
+                    <span className="block text-sm font-medium text-secondary">
                       Which text speaks to your question?
                     </span>
-                    {/* Source buttons — centered with even spacing */}
+                    {/* Source buttons — centered with even spacing, isolated hover states */}
                     <div className="mt-5 flex justify-center gap-4">
-                      {["bhagavad_gita", "ramcharitmanas"].map((slug) => (
-                        <button
-                          key={slug}
-                          onClick={() => handleSourceSelect(slug)}
-                          className={`rounded-full px-5 py-2.5 text-sm font-medium transition-all ${
-                            data.sourceSlug === slug
-                              ? "bg-accent text-on-accent shadow-sm"
-                              : "border border-line text-secondary hover:border-accent hover:bg-accent/5"
-                          }`}
-                        >
-                          {slug === "bhagavad_gita" ? "Bhagavad Gita" : "Ramcharitmanas"}
-                        </button>
-                      ))}
+                      <button
+                        onClick={() => handleSourceSelect("bhagavad_gita")}
+                        className={`rounded-full px-6 py-2.5 text-sm font-medium transition-colors ${
+                          data.sourceSlug === "bhagavad_gita"
+                            ? "bg-accent text-on-accent shadow-sm"
+                            : "border border-line text-secondary hover:border-accent/60 hover:text-primary"
+                        }`}
+                      >
+                        Bhagavad Gita
+                      </button>
+                      <button
+                        onClick={() => handleSourceSelect("ramcharitmanas")}
+                        className={`rounded-full px-6 py-2.5 text-sm font-medium transition-colors ${
+                          data.sourceSlug === "ramcharitmanas"
+                            ? "bg-accent text-on-accent shadow-sm"
+                            : "border border-line text-secondary hover:border-accent/60 hover:text-primary"
+                        }`}
+                      >
+                        Ramcharitmanas
+                      </button>
                     </div>
-                    {/* Learn more link — simple text link styling */}
+                    {/* Learn more link — simple text link styling, not in label */}
                     <div className="mt-5 text-center">
                       <button
                         type="button"
@@ -302,7 +309,7 @@ export default function OnboardingFlow() {
                         Not sure? Learn more
                       </button>
                     </div>
-                  </label>
+                  </div>
                 </div>
               )}
 
