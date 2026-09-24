@@ -255,11 +255,30 @@ export default function OnboardingFlow() {
                         <button
                           key={range}
                           onClick={() => handleAgeSelect(range)}
-                          className={`rounded-full px-4 py-2 text-sm font-medium transition-all ${
-                            data.ageRange === range
-                              ? "bg-accent text-on-accent shadow-sm"
-                              : "border border-line text-secondary hover:border-accent hover:text-primary"
-                          }`}
+                          type="button"
+                          style={{
+                            border: `1px solid ${data.ageRange === range ? "#D4AF37" : "#6B7280"}`,
+                            backgroundColor: data.ageRange === range ? "#D4AF37" : "transparent",
+                            color: data.ageRange === range ? "#0F0D0A" : "#C9BFA8",
+                            borderRadius: "9999px",
+                            padding: "8px 16px",
+                            fontSize: "14px",
+                            fontWeight: "500",
+                            cursor: "pointer",
+                            transition: "all 200ms",
+                          }}
+                          onMouseEnter={(e) => {
+                            if (data.ageRange !== range) {
+                              e.currentTarget.style.borderColor = "#D4AF37";
+                              e.currentTarget.style.color = "#E5DDD0";
+                            }
+                          }}
+                          onMouseLeave={(e) => {
+                            if (data.ageRange !== range) {
+                              e.currentTarget.style.borderColor = "#6B7280";
+                              e.currentTarget.style.color = "#C9BFA8";
+                            }
+                          }}
                         >
                           {range}
                         </button>
