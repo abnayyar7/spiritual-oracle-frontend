@@ -236,7 +236,7 @@ export default function OnboardingFlow() {
                   <p className="text-lg text-secondary leading-relaxed">
                     For centuries, seekers have opened sacred texts at random to find guidance.
                     <br />
-                    Now it's your turn.
+                    Now it&apos;s your turn.
                   </p>
                 </motion.div>
 
@@ -268,7 +268,7 @@ export default function OnboardingFlow() {
                       ease: "easeInOut",
                     }}
                   >
-                    Let's Begin
+                    Let&apos;s Begin
                     <ChevronRight size={18} />
                   </motion.button>
                 </motion.div>
@@ -491,7 +491,7 @@ export default function OnboardingFlow() {
                   }}
                 >
                   <label className="block">
-                    <span className="text-sm font-medium text-secondary">What's on your mind today?</span>
+                    <span className="text-sm font-medium text-secondary">What&apos;s on your mind today?</span>
                     <textarea
                       ref={questionInputRef}
                       value={data.question}
