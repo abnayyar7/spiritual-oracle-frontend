@@ -276,31 +276,35 @@ export default function OnboardingFlow() {
                     <span className="block text-sm font-medium text-secondary">
                       Which text speaks to your question?
                     </span>
-                    {/* Source buttons — centered with even spacing, isolated hover states */}
-                    <div className="mt-5 flex justify-center gap-4">
+                    {/* Source buttons — centered with generous spacing */}
+                    <div className="mt-6 flex justify-center gap-6">
+                      {/* Bhagavad Gita button */}
                       <button
                         onClick={() => handleSourceSelect("bhagavad_gita")}
-                        className={`rounded-full px-6 py-2.5 text-sm font-medium transition-colors ${
+                        type="button"
+                        className={`rounded-full px-8 py-3 text-sm font-medium transition-all duration-200 ${
                           data.sourceSlug === "bhagavad_gita"
-                            ? "bg-accent text-on-accent shadow-sm"
-                            : "border border-line text-secondary hover:border-accent/60 hover:text-primary"
+                            ? "border border-accent bg-accent text-on-accent shadow-sm"
+                            : "border border-line bg-transparent text-secondary hover:border-accent hover:bg-accent/10 hover:text-primary"
                         }`}
                       >
                         Bhagavad Gita
                       </button>
+                      {/* Ramcharitmanas button */}
                       <button
                         onClick={() => handleSourceSelect("ramcharitmanas")}
-                        className={`rounded-full px-6 py-2.5 text-sm font-medium transition-colors ${
+                        type="button"
+                        className={`rounded-full px-8 py-3 text-sm font-medium transition-all duration-200 ${
                           data.sourceSlug === "ramcharitmanas"
-                            ? "bg-accent text-on-accent shadow-sm"
-                            : "border border-line text-secondary hover:border-accent/60 hover:text-primary"
+                            ? "border border-accent bg-accent text-on-accent shadow-sm"
+                            : "border border-line bg-transparent text-secondary hover:border-accent hover:bg-accent/10 hover:text-primary"
                         }`}
                       >
                         Ramcharitmanas
                       </button>
                     </div>
-                    {/* Learn more link — simple text link styling, not in label */}
-                    <div className="mt-5 text-center">
+                    {/* Learn more link — simple text link styling */}
+                    <div className="mt-6 text-center">
                       <button
                         type="button"
                         onClick={() => setIsGuidanceOpen(true)}
