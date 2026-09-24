@@ -152,6 +152,7 @@ export default function OnboardingFlow() {
       const oracleUrl = `/oracle?${params.toString()}`;
       console.log("🚀 [Onboarding] Redirecting to:", oracleUrl);
       router.push(oracleUrl);
+      router.refresh(); // Update server components (Header) with onboarding_complete state
     } catch (error) {
       console.error("Onboarding submission failed:", error);
       setIsSubmitting(false);

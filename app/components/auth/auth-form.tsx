@@ -120,6 +120,7 @@ export default function AuthForm({
         if (profile.onboarding_complete === false || profile.onboarding_complete === null) {
           console.log("🚀 [Auth] Routing to /onboarding (onboarding_complete is false/null)");
           router.push("/onboarding");
+          router.refresh(); // Update server components (Header) with new session state
           return;
         }
 
@@ -130,6 +131,7 @@ export default function AuthForm({
         if (mode === "sign-up") {
           console.log("🚀 [Auth] New signup - routing to /onboarding as fallback");
           router.push("/onboarding");
+          router.refresh(); // Update server components (Header) with new session state
           return;
         }
       }
@@ -139,6 +141,7 @@ export default function AuthForm({
       if (mode === "sign-up") {
         console.log("🚀 [Auth] New signup with error - routing to /onboarding as fallback");
         router.push("/onboarding");
+        router.refresh(); // Update server components (Header) with new session state
         return;
       }
     }
