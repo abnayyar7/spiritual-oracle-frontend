@@ -282,11 +282,12 @@ export default function OnboardingFlow() {
                       <button
                         onClick={() => handleSourceSelect("bhagavad_gita")}
                         type="button"
-                        className={`rounded-full px-8 py-3 text-sm font-medium transition-all duration-200 ${
-                          data.sourceSlug === "bhagavad_gita"
-                            ? "border border-accent bg-accent text-on-accent shadow-sm"
-                            : "border border-line bg-transparent text-secondary hover:border-accent hover:bg-accent/10 hover:text-primary"
-                        }`}
+                        style={{
+                          border: `2px solid ${data.sourceSlug === "bhagavad_gita" ? "#d4af37" : "#6b7280"}`,
+                          backgroundColor: data.sourceSlug === "bhagavad_gita" ? "#d4af37" : "transparent",
+                          color: data.sourceSlug === "bhagavad_gita" ? "#1f1f1f" : "#9ca3af",
+                        }}
+                        className="rounded-full px-8 py-3 text-sm font-medium transition-all duration-200 hover:border-amber-400 hover:bg-amber-400/20 hover:text-gray-100"
                       >
                         Bhagavad Gita
                       </button>
@@ -294,11 +295,12 @@ export default function OnboardingFlow() {
                       <button
                         onClick={() => handleSourceSelect("ramcharitmanas")}
                         type="button"
-                        className={`rounded-full px-8 py-3 text-sm font-medium transition-all duration-200 ${
-                          data.sourceSlug === "ramcharitmanas"
-                            ? "border border-accent bg-accent text-on-accent shadow-sm"
-                            : "border border-line bg-transparent text-secondary hover:border-accent hover:bg-accent/10 hover:text-primary"
-                        }`}
+                        style={{
+                          border: `2px solid ${data.sourceSlug === "ramcharitmanas" ? "#d4af37" : "#6b7280"}`,
+                          backgroundColor: data.sourceSlug === "ramcharitmanas" ? "#d4af37" : "transparent",
+                          color: data.sourceSlug === "ramcharitmanas" ? "#1f1f1f" : "#9ca3af",
+                        }}
+                        className="rounded-full px-8 py-3 text-sm font-medium transition-all duration-200 hover:border-amber-400 hover:bg-amber-400/20 hover:text-gray-100"
                       >
                         Ramcharitmanas
                       </button>
