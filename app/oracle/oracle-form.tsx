@@ -146,12 +146,18 @@ export default function OracleForm() {
     const numberParam = searchParams.get("number");
 
     if (source && questionParam && numberParam) {
+      console.log("📋 [Oracle] Params detected from onboarding:", {
+        source,
+        question: questionParam,
+        number: numberParam,
+      });
       setParamsProcessed(true);
       setActiveSlug(source);
       setQuestion(questionParam);
       setNumber(numberParam);
 
-      // Clear URL params after processing
+      // Clear URL params so page refresh doesn't re-submit
+      console.log("🗑️ [Oracle] Clearing URL params");
       window.history.replaceState({}, document.title, "/oracle");
     }
   }, [searchParams, paramsProcessed]);
@@ -160,20 +166,23 @@ export default function OracleForm() {
     if (!paramsProcessed || hasAutoSubmitted || !formRef.current) return;
 
     // Auto-submit form when all params from onboarding are present
-    const source = searchParams.get("source");
-    const questionParam = searchParams.get("question");
-    const numberParam = searchParams.get("number");
-
-    if (source && questionParam && numberParam && question && number && activeSlug) {
+    // Check state values (not searchParams) since we already set them in previous effect
+    if (question && number && activeSlug) {
+      console.log("✅ [Oracle] Auto-submitting with pre-filled form:", {
+        activeSlug,
+        question,
+        number,
+      });
       setHasAutoSubmitted(true);
-      // Trigger form submission after a small delay to ensure state is updated
+
+      // Wait for state to fully settle and render before submitting
       setTimeout(() => {
         formRef.current?.dispatchEvent(
           new Event("submit", { bubbles: true, cancelable: true })
         );
-      }, 100);
+      }, 500);
     }
-  }, [paramsProcessed, question, number, activeSlug, searchParams, hasAutoSubmitted]);
+  }, [paramsProcessed, question, number, activeSlug, hasAutoSubmitted]);
 
   const selectSource = useCallback(
     (slug: string, shouldFocusInput: boolean = false) => {
@@ -200,8 +209,15 @@ export default function OracleForm() {
     setError("");
     setResult(null);
 
+    console.log("🚀 [Oracle] Form submission triggered:", {
+      activeSlug,
+      question,
+      number,
+    });
+
     // Validate source selection
     if (!activeSlug) {
+      console.log("❌ [Oracle] No source selected");
       setSourceError("Please select a text first");
       return;
     }
