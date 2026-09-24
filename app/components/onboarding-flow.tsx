@@ -124,6 +124,7 @@ export default function OnboardingFlow() {
 
     try {
       // Save profile
+      console.log("💾 [Onboarding] Saving profile...");
       const profileRes = await fetch("/api/profile", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -135,8 +136,11 @@ export default function OnboardingFlow() {
       });
 
       if (!profileRes.ok) {
+        console.error("❌ [Onboarding] Profile save failed:", profileRes.status);
         throw new Error("Failed to save profile");
       }
+
+      console.log("✅ [Onboarding] Profile saved successfully");
 
       // Redirect to oracle with pre-filled data
       const params = new URLSearchParams({
@@ -145,7 +149,9 @@ export default function OnboardingFlow() {
         number: data.number,
       });
 
-      router.push(`/oracle?${params.toString()}`);
+      const oracleUrl = `/oracle?${params.toString()}`;
+      console.log("🚀 [Onboarding] Redirecting to:", oracleUrl);
+      router.push(oracleUrl);
     } catch (error) {
       console.error("Onboarding submission failed:", error);
       setIsSubmitting(false);
