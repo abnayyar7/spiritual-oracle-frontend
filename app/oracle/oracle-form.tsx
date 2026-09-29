@@ -2,14 +2,23 @@
 
 import { FormEvent, useCallback, useEffect, useRef, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
 import { createClient } from "@/lib/supabase/client";
 import { SourceGuidanceDrawer } from "@/app/components/source-guidance-drawer";
+import { SituationCard } from "@/app/components/situation-card";
+import { cleanVerseText } from "@/lib/verse-utils";
+import {
+  SITUATIONS,
+  SOURCE_INFO,
+  matchSourceFromKeywords,
+  type SourceSlug,
+} from "@/app/lib/oracle-situations";
 
+type Tab = "guided" | "choose";
 
-// Only used until GET /sources responds, and as a floor if it fails. The
-// backend performs the real, authoritative range check regardless.
 const FALLBACK_SOURCES: Source[] = [
   { id: 2, slug: "bhagavad_gita", title: "Bhagavad Gita", total_units: 701 },
+  { id: 3, slug: "ramcharitmanas", title: "Ramcharitmanas", total_units: 1074 },
 ];
 
 type Source = {
@@ -24,7 +33,6 @@ type OracleResponse = {
   takeaway?: string;
   generated_takeaway?: string;
   original_text?: string;
-  // null when the entry has no English translation yet
   selected_translation?: string | null;
   selected_translation_author?: string | null;
   chapter_number?: number;
@@ -80,6 +88,8 @@ export default function OracleForm() {
   const supabase = createClient();
   const searchParams = useSearchParams();
   const [sources, setSources] = useState<Source[]>(FALLBACK_SOURCES);
+  const [activeTab, setActiveTab] = useState<Tab>("guided");
+  const [selectedSituation, setSelectedSituation] = useState<number | null>(null);
   const [activeSlug, setActiveSlug] = useState("");
   const [question, setQuestion] = useState("");
   const [number, setNumber] = useState("");
@@ -89,9 +99,12 @@ export default function OracleForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [isGuidanceOpen, setIsGuidanceOpen] = useState(false);
   const [hasAutoSubmitted, setHasAutoSubmitted] = useState(false);
+  const [showSomethingElse, setShowSomethingElse] = useState(false);
+  const [somethingElseInput, setSomethingElseInput] = useState("");
   const questionInputRef = useRef<HTMLTextAreaElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [paramsProcessed, setParamsProcessed] = useState(false);
+  const [showRestartChoice, setShowRestartChoice] = useState(false);
 
   const activeSource = sources.find((source) => source.slug === activeSlug);
   const maxNumber = activeSource?.total_units ?? 1;
@@ -99,6 +112,22 @@ export default function OracleForm() {
   const numberError = getNumberError(number, maxNumber);
   const isSubmitDisabled =
     isLoading || !question || !number || !activeSlug || Boolean(numberError);
+
+  const getSourceLabel = (slug: SourceSlug) => {
+    const info = SOURCE_INFO[slug];
+    return `Drawing from the ${info.title}`;
+  };
+
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    setSelectedSituation(null);
+    setActiveSlug("");
+    setQuestion("");
+    setNumber("");
+    setShowSomethingElse(false);
+    setSomethingElseInput("");
+    setSourceError("");
+  };
 
   useEffect(() => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL;
@@ -184,25 +213,126 @@ export default function OracleForm() {
     }
   }, [paramsProcessed, question, number, activeSlug, hasAutoSubmitted]);
 
-  const selectSource = useCallback(
-    (slug: string, shouldFocusInput: boolean = false) => {
-      // Switching source invalidates everything tied to the old one.
+  const selectSituation = useCallback((situationId: number) => {
+    const situation = SITUATIONS.find((s) => s.id === situationId);
+    if (!situation) return;
+
+    setSelectedSituation(situationId);
+    setActiveSlug(situation.source);
+    setSourceError("");
+    setQuestion("");
+    setNumber("");
+    setResult(null);
+    setError("");
+    setShowSomethingElse(false);
+    setSomethingElseInput("");
+  }, []);
+
+  const collapseSituation = useCallback(() => {
+    setSelectedSituation(null);
+  }, []);
+
+  const handleAskAnotherQuestion = () => {
+    setShowRestartChoice(true);
+  };
+
+  const handleSameTopicAgain = () => {
+    // Keep source/situation, clear question/number/result
+    setQuestion("");
+    setNumber("");
+    setResult(null);
+    setError("");
+    setShowRestartChoice(false);
+
+    // Scroll to question textarea
+    setTimeout(() => {
+      questionInputRef.current?.focus();
+      questionInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 100);
+  };
+
+  const handleNewTopic = () => {
+    // Full reset
+    setActiveTab("guided");
+    setSelectedSituation(null);
+    setActiveSlug("");
+    setQuestion("");
+    setNumber("");
+    setResult(null);
+    setError("");
+    setSourceError("");
+    setShowSomethingElse(false);
+    setSomethingElseInput("");
+    setShowRestartChoice(false);
+
+    // Scroll to top
+    setTimeout(() => {
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }, 100);
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      // Show brief confirmation
+      const button = event?.target as HTMLButtonElement;
+      if (button) {
+        const original = button.textContent;
+        button.textContent = "Copied!";
+        setTimeout(() => {
+          button.textContent = original;
+        }, 2000);
+      }
+    } catch (err) {
+      console.error("Failed to copy:", err);
+    }
+  };
+
+  const selectSourceDirect = useCallback((slug: string, shouldFocusInput: boolean = false) => {
+    if (slug === "") {
+      // Clear selection - go back to pills
+      setActiveSlug("");
+      setQuestion("");
+      setNumber("");
+      setError("");
+    } else {
+      // Set new source
       setActiveSlug(slug);
-      setSourceError(""); // Clear source error when source is selected
+      setSelectedSituation(null);
+      setSourceError("");
       setQuestion("");
       setNumber("");
       setResult(null);
       setError("");
+      setShowSomethingElse(false);
 
-      // Focus question input if called from the guidance drawer
       if (shouldFocusInput) {
         setTimeout(() => {
           questionInputRef.current?.focus();
         }, 0);
       }
-    },
-    [],
-  );
+    }
+  }, []);
+
+  const handleSomethingElseContinue = () => {
+    if (!somethingElseInput.trim()) return;
+
+    const matched = matchSourceFromKeywords(somethingElseInput);
+    setActiveSlug(matched);
+    setQuestion(somethingElseInput);
+    setSelectedSituation(null);
+    setShowSomethingElse(false);
+    setTimeout(() => {
+      questionInputRef.current?.focus();
+    }, 0);
+  };
+
+  const toggleSource = () => {
+    if (!activeSlug) return;
+    const newSlug = activeSlug === "bhagavad_gita" ? "ramcharitmanas" : "bhagavad_gita";
+    setActiveSlug(newSlug);
+    setQuestion(somethingElseInput);
+  };
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -215,10 +345,9 @@ export default function OracleForm() {
       number,
     });
 
-    // Validate source selection
     if (!activeSlug) {
       console.log("❌ [Oracle] No source selected");
-      setSourceError("Please select a text first");
+      setSourceError("Please select a situation or text first");
       return;
     }
 
@@ -306,113 +435,396 @@ export default function OracleForm() {
           </h1>
         </div>
 
-        <div className="mb-6 space-y-3">
-          {/* Source selector — two separate buttons, not in a container */}
-          <div className="flex gap-5">
-            {sources.map((source) => {
-              const isActive = source.slug === activeSlug;
-
-              return (
-                <button
-                  key={source.slug}
-                  type="button"
-                  onClick={() => selectSource(source.slug)}
-                  style={{
-                    border: `1px solid ${isActive ? "#D4AF37" : "#6B7280"}`,
-                    backgroundColor: isActive ? "#D4AF37" : "transparent",
-                    color: isActive ? "#0F0D0A" : "#C9BFA8",
-                    borderRadius: "9999px",
-                    padding: "12px 32px",
-                    fontSize: "14px",
-                    fontWeight: "500",
-                    cursor: "pointer",
-                    transition: "all 200ms",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.borderColor = "#D4AF37";
-                      e.currentTarget.style.color = "#E5DDD0";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.borderColor = "#6B7280";
-                      e.currentTarget.style.color = "#C9BFA8";
-                    }
-                  }}
-                >
-                  {source.title}
-                </button>
-              );
-            })}
-          </div>
-
-          {sourceError && (
-            <p className="text-sm text-danger">{sourceError}</p>
-          )}
-
+        {/* Tabs */}
+        <div className="mb-8 flex gap-2 border-b border-line">
           <button
             type="button"
-            onClick={() => setIsGuidanceOpen(true)}
-            className="text-sm text-accent transition-all hover:underline"
+            onClick={() => handleTabChange("guided")}
+            className={`px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === "guided"
+                ? "border-b-2 border-accent text-primary"
+                : "text-secondary hover:text-primary"
+            }`}
           >
-            Not sure? Learn more →
+            Guided
+          </button>
+          <button
+            type="button"
+            onClick={() => handleTabChange("choose")}
+            className={`px-4 py-3 text-sm font-medium transition-colors ${
+              activeTab === "choose"
+                ? "border-b-2 border-accent text-primary"
+                : "text-secondary hover:text-primary"
+            }`}
+          >
+            Choose Text
           </button>
         </div>
 
-        <form
-          ref={formRef}
-          onSubmit={handleSubmit}
-          className="space-y-5 rounded-2xl border border-line bg-elevated p-6 shadow-sm sm:p-8"
-        >
-          <label className="block">
-            <span className="text-sm font-medium text-secondary">
-              Your question
-            </span>
-            <textarea
-              ref={questionInputRef}
-              value={question}
-              onChange={(event) => setQuestion(event.target.value)}
-              required
-              rows={5}
-              className="mt-2 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none transition focus:border-accent"
-            />
-            <p className="mt-2 text-xs text-muted">
-              Ask about life, purpose, relationships — not predictions or dates.
-            </p>
-          </label>
+        {/* Tab Content */}
+        <AnimatePresence mode="wait">
+          {activeTab === "guided" && (
+            <motion.div
+              key="guided"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-8 space-y-6"
+            >
+              <AnimatePresence mode="wait">
+                {!activeSlug && !selectedSituation && !showSomethingElse ? (
+                  // Grid view - all 12 cards + "something else"
+                  <motion.div
+                    key="grid"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <h2 className="text-lg font-semibold text-primary">
+                      What guidance are you seeking?
+                    </h2>
+                    <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                      {SITUATIONS.map((situation) => (
+                        <SituationCard
+                          key={situation.id}
+                          situation={situation}
+                          isSelected={false}
+                          onClick={() => selectSituation(situation.id)}
+                        />
+                      ))}
+                    </div>
+                    <SituationCard
+                      situation={{
+                        id: 0,
+                        label: "Something else",
+                        source: "bhagavad_gita",
+                      }}
+                      isSelected={false}
+                      isSpecial={true}
+                      onClick={() => {
+                        setShowSomethingElse(true);
+                        setSelectedSituation(null);
+                      }}
+                    />
+                  </motion.div>
+                ) : showSomethingElse ? (
+                  // Something else input flow (only show when actively in this flow)
+                  <motion.div
+                    key="something-else-input"
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: 10 }}
+                    transition={{ duration: 0.3 }}
+                    className="rounded-lg border border-line bg-elevated p-4"
+                  >
+                    <label className="block space-y-3">
+                      <span className="text-sm font-medium text-secondary">
+                        Describe what's on your mind in a few words
+                      </span>
+                      <input
+                        type="text"
+                        value={somethingElseInput}
+                        onChange={(e) => setSomethingElseInput(e.target.value)}
+                        placeholder="e.g., my mother is unwell"
+                        className="w-full rounded-lg border border-line bg-surface px-3 py-2 text-primary outline-none transition focus:border-accent"
+                      />
+                      <button
+                        type="button"
+                        onClick={handleSomethingElseContinue}
+                        disabled={!somethingElseInput.trim()}
+                        className="inline-flex items-center rounded-lg bg-accent px-4 py-2 text-sm font-medium text-on-accent transition-opacity hover:opacity-90 disabled:opacity-50"
+                      >
+                        Continue →
+                      </button>
+                    </label>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </motion.div>
+          )}
 
-          <label className="block">
-            <span className="text-sm font-medium text-secondary">
-              Oracle number
-            </span>
-            <input
-              type="number"
-              value={number}
-              onChange={(event) => setNumber(event.target.value)}
-              required
-              min={1}
-              max={maxNumber}
-              aria-invalid={Boolean(numberError)}
-              className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3.5 text-primary outline-none transition focus:border-accent aria-[invalid=true]:border-danger"
-            />
-            {numberError ? (
-              <p className="mt-2 text-sm text-danger">{numberError}</p>
-            ) : (
-              <p className="mt-2 text-sm text-muted">
-                Enter a number between 1 and {maxNumber}.
+          {activeTab === "choose" && (
+            <motion.div
+              key="choose"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-8 space-y-6"
+            >
+              <AnimatePresence mode="wait">
+                {!activeSlug ? (
+                  // Pills view
+                  <motion.div
+                    key="pills"
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.3 }}
+                    className="space-y-4"
+                  >
+                    <div className="space-y-4">
+                      {sources.map((source) => {
+                        const info = SOURCE_INFO[source.slug as SourceSlug];
+
+                        return (
+                          <button
+                            key={source.slug}
+                            type="button"
+                            onClick={() => selectSourceDirect(source.slug)}
+                            style={{
+                              border: "1px solid #6B7280",
+                              backgroundColor: "transparent",
+                              color: "#C9BFA8",
+                              borderRadius: "12px",
+                              padding: "16px",
+                              fontSize: "14px",
+                              fontWeight: "500",
+                              cursor: "pointer",
+                              transition: "all 200ms",
+                              textAlign: "left",
+                            }}
+                            onMouseEnter={(e) => {
+                              e.currentTarget.style.borderColor = "#D4AF37";
+                              e.currentTarget.style.color = "#E5DDD0";
+                            }}
+                            onMouseLeave={(e) => {
+                              e.currentTarget.style.borderColor = "#6B7280";
+                              e.currentTarget.style.color = "#C9BFA8";
+                            }}
+                          >
+                            <div className="font-medium">{info.title}</div>
+                            <div className="text-xs opacity-75">{info.subtitle}</div>
+                          </button>
+                        );
+                      })}
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setIsGuidanceOpen(true)}
+                      className="text-sm text-accent transition-all hover:underline"
+                    >
+                      Not sure? Learn more →
+                    </button>
+                  </motion.div>
+                ) : null}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {sourceError && (
+          <p className="mb-4 text-sm text-danger">{sourceError}</p>
+        )}
+
+        {/* Unified compact bar section - shows only when source is selected */}
+        <AnimatePresence mode="wait">
+          {activeSlug && !result && (
+            // Before answer: "Drawing from..." with Change button
+            <motion.div
+              key="compact-bar-before-answer"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-8 flex items-center justify-between rounded-lg border border-line bg-elevated p-4"
+            >
+              <p className="text-sm text-muted">
+                {getSourceLabel(activeSlug as SourceSlug)}
               </p>
-            )}
-          </label>
+              {selectedSituation || showSomethingElse ? (
+                <button
+                  type="button"
+                  onClick={selectedSituation ? collapseSituation : () => setShowSomethingElse(false)}
+                  className="text-sm text-accent transition-colors hover:underline"
+                >
+                  Change
+                </button>
+              ) : null}
+            </motion.div>
+          )}
 
-          <button
-            type="submit"
-            disabled={isSubmitDisabled}
-            className="flex h-12 w-full items-center justify-center rounded-full bg-accent px-4 text-sm font-medium tracking-wide text-on-accent transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {isLoading ? "Asking..." : "Ask Oracle"}
-          </button>
-        </form>
+          {activeSlug && result && (
+            // After answer: "✓ Answered from..." with Ask Another Question
+            <motion.div
+              key="compact-bar-after-answer"
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 10 }}
+              transition={{ duration: 0.3 }}
+              className="mb-8 space-y-3"
+            >
+              <div className="flex items-center justify-between rounded-lg border border-line bg-elevated p-4">
+                <p className="text-sm font-medium text-primary">
+                  ✓ Answered from {SOURCE_INFO[activeSlug as SourceSlug]?.title}
+                </p>
+                <button
+                  type="button"
+                  onClick={handleAskAnotherQuestion}
+                  className="text-sm text-accent transition-colors hover:underline"
+                >
+                  Ask Another Question →
+                </button>
+              </div>
+
+              {/* "Same topic?" choice */}
+              <AnimatePresence>
+                {showRestartChoice && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -10 }}
+                    transition={{ duration: 0.2 }}
+                    className="rounded-lg border border-line bg-elevated p-4"
+                  >
+                    <p className="mb-3 text-sm font-medium text-secondary">Same topic?</p>
+                    <div className="flex gap-3">
+                      <button
+                        type="button"
+                        onClick={handleSameTopicAgain}
+                        className="flex-1 rounded-lg border border-accent px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent hover:text-on-accent"
+                      >
+                        Yes, ask again
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleNewTopic}
+                        className="flex-1 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-on-accent transition-opacity hover:opacity-90"
+                      >
+                        New topic
+                      </button>
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Form only visible after source selection, hidden when result shown */}
+        <AnimatePresence>
+          {activeSlug && !result && (
+            <motion.form
+              ref={formRef}
+              onSubmit={handleSubmit}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-5 rounded-2xl border border-line bg-elevated p-6 shadow-sm sm:p-8"
+            >
+              <label className="block">
+                <span className="text-sm font-medium text-secondary">
+                  Your question
+                </span>
+                <textarea
+                  ref={questionInputRef}
+                  value={question}
+                  onChange={(event) => setQuestion(event.target.value)}
+                  required
+                  rows={5}
+                  className="mt-2 w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none transition focus:border-accent"
+                />
+                <p className="mt-2 text-xs text-muted">
+                  Ask about life, purpose, relationships — not predictions or dates.
+                </p>
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-secondary">
+                  Oracle number
+                </span>
+                <input
+                  type="number"
+                  value={number}
+                  onChange={(event) => setNumber(event.target.value)}
+                  required
+                  min={1}
+                  max={maxNumber}
+                  aria-invalid={Boolean(numberError)}
+                  className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3.5 text-primary outline-none transition focus:border-accent aria-[invalid=true]:border-danger"
+                />
+                {numberError ? (
+                  <p className="mt-2 text-sm text-danger">{numberError}</p>
+                ) : (
+                  <p className="mt-2 text-sm text-muted">
+                    Enter a number between 1 and {maxNumber}.
+                  </p>
+                )}
+              </label>
+
+              <button
+                type="submit"
+                disabled={isSubmitDisabled}
+                className="flex h-12 w-full items-center justify-center rounded-full bg-accent px-4 text-sm font-medium tracking-wide text-on-accent transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isLoading ? "Asking..." : "Ask Oracle"}
+              </button>
+            </motion.form>
+          )}
+
+          {activeSlug && result && (
+            // Post-answer locked form
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+              className="space-y-5 rounded-2xl border border-line bg-elevated p-6 shadow-sm sm:p-8"
+            >
+              <label className="block">
+                <span className="text-sm font-medium text-secondary">
+                  Your question
+                </span>
+                <div className="relative mt-2">
+                  <textarea
+                    ref={questionInputRef}
+                    value={question}
+                    readOnly
+                    rows={5}
+                    className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none opacity-75 transition"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => copyToClipboard(question)}
+                    className="absolute right-3 top-3 rounded-lg bg-surface p-2 text-muted transition-colors hover:text-accent"
+                    title="Copy question"
+                  >
+                    <svg
+                      className="h-4 w-4"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </label>
+
+              <label className="block">
+                <span className="text-sm font-medium text-secondary">
+                  Oracle number
+                </span>
+                <input
+                  type="number"
+                  value={number}
+                  readOnly
+                  className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3.5 text-primary outline-none opacity-75 transition"
+                />
+              </label>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {error ? (
           <p className="mt-6 rounded-xl border border-line-strong bg-surface-2 px-4 py-3 text-sm text-caution">
@@ -430,7 +842,7 @@ export default function OracleForm() {
               {result.originalText}
             </p>
             {result.hasTranslation ? (
-              <p className="leading-7 text-secondary">{result.translation}</p>
+              <p className="leading-7 text-secondary">{cleanVerseText(result.translation)}</p>
             ) : (
               <p className="text-sm italic leading-7 text-muted">
                 English translation not yet available for this verse
@@ -450,7 +862,7 @@ export default function OracleForm() {
         isOpen={isGuidanceOpen}
         onClose={() => setIsGuidanceOpen(false)}
         onSelectSource={(slug) => {
-          selectSource(slug, true);
+          selectSourceDirect(slug, true);
         }}
       />
     </main>

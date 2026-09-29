@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { ChevronRight, Info } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SourceGuidanceDrawer } from "@/app/components/source-guidance-drawer";
+import { SituationCard } from "@/app/components/situation-card";
+import { SITUATIONS } from "@/app/lib/oracle-situations";
 
 type Section = "welcome" | "questions";
 type SourceSlug = "bhagavad_gita" | "ramcharitmanas" | "";
@@ -64,6 +66,17 @@ export default function OnboardingFlow() {
 
   const handleBeginClick = () => {
     setSection("questions");
+  };
+
+  const handleSituationSelect = (situationId: number) => {
+    const situation = SITUATIONS.find((s) => s.id === situationId);
+    if (!situation) return;
+
+    setData({ ...data, sourceSlug: situation.source });
+    // Advance to step 4 when situation is selected
+    if (currentStep === 3) {
+      setTimeout(() => setCurrentStep(4), 300);
+    }
   };
 
   const handleSourceSelect = (slug: string) => {
@@ -385,7 +398,7 @@ export default function OnboardingFlow() {
                 </motion.div>
               )}
 
-              {/* Field 3: Source Selection — visible at step 3+ */}
+              {/* Field 3: Situation Selection — visible at step 3+ */}
               {currentStep >= 3 && (
                 <motion.div
                   key="field-source"
@@ -398,73 +411,25 @@ export default function OnboardingFlow() {
                     ease: "easeOut",
                   }}
                 >
-                  <div>
+                  <div className="space-y-4">
                     <span className="block text-sm font-medium text-secondary">
-                      Which text speaks to your question?
+                      What guidance are you seeking?
                     </span>
-                    {/* Source buttons — centered with inline styles (Tailwind failed after 5 attempts) */}
-                    <div className="mt-5 flex justify-center gap-4">
-                      <button
-                        onClick={() => handleSourceSelect("bhagavad_gita")}
-                        type="button"
-                        style={{
-                          border: `1px solid ${data.sourceSlug === "bhagavad_gita" ? "#D4AF37" : "#6B7280"}`,
-                          backgroundColor: data.sourceSlug === "bhagavad_gita" ? "#D4AF37" : "transparent",
-                          color: data.sourceSlug === "bhagavad_gita" ? "#0F0D0A" : "#C9BFA8",
-                          borderRadius: "9999px",
-                          padding: "10px 24px",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          cursor: "pointer",
-                          transition: "all 200ms",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (data.sourceSlug !== "bhagavad_gita") {
-                            e.currentTarget.style.borderColor = "#D4AF37";
-                            e.currentTarget.style.color = "#E5DDD0";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (data.sourceSlug !== "bhagavad_gita") {
-                            e.currentTarget.style.borderColor = "#6B7280";
-                            e.currentTarget.style.color = "#C9BFA8";
-                          }
-                        }}
-                      >
-                        Bhagavad Gita
-                      </button>
-                      <button
-                        onClick={() => handleSourceSelect("ramcharitmanas")}
-                        type="button"
-                        style={{
-                          border: `1px solid ${data.sourceSlug === "ramcharitmanas" ? "#D4AF37" : "#6B7280"}`,
-                          backgroundColor: data.sourceSlug === "ramcharitmanas" ? "#D4AF37" : "transparent",
-                          color: data.sourceSlug === "ramcharitmanas" ? "#0F0D0A" : "#C9BFA8",
-                          borderRadius: "9999px",
-                          padding: "10px 24px",
-                          fontSize: "14px",
-                          fontWeight: "500",
-                          cursor: "pointer",
-                          transition: "all 200ms",
-                        }}
-                        onMouseEnter={(e) => {
-                          if (data.sourceSlug !== "ramcharitmanas") {
-                            e.currentTarget.style.borderColor = "#D4AF37";
-                            e.currentTarget.style.color = "#E5DDD0";
-                          }
-                        }}
-                        onMouseLeave={(e) => {
-                          if (data.sourceSlug !== "ramcharitmanas") {
-                            e.currentTarget.style.borderColor = "#6B7280";
-                            e.currentTarget.style.color = "#C9BFA8";
-                          }
-                        }}
-                      >
-                        Ramcharitmanas
-                      </button>
+                    <div className="grid grid-cols-2 gap-3">
+                      {SITUATIONS.map((situation) => {
+                        const isSelected = data.sourceSlug === situation.source;
+                        return (
+                          <SituationCard
+                            key={situation.id}
+                            situation={situation}
+                            isSelected={isSelected}
+                            onClick={() => handleSituationSelect(situation.id)}
+                          />
+                        );
+                      })}
                     </div>
-                    {/* Learn more link — simple text link styling */}
-                    <div className="mt-6 text-center">
+                    {/* Learn more link */}
+                    <div className="pt-4 text-center">
                       <button
                         type="button"
                         onClick={() => setIsGuidanceOpen(true)}
