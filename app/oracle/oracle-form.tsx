@@ -634,7 +634,7 @@ export default function OracleForm() {
               {!result ? (
                 // Before answer: situation + source with Change button
                 <div className="mb-8 rounded-lg border border-line bg-elevated p-4">
-                  <div className="flex items-start justify-between gap-4">
+                  <div className="flex items-center justify-between gap-4">
                     <div className="flex-1">
                       {/* Line 1: Situation or user input */}
                       {selectedSituation ? (
@@ -647,15 +647,14 @@ export default function OracleForm() {
                         </p>
                       ) : (
                         <p className="text-sm font-medium text-primary">
-                          Drawing from {SOURCE_INFO[activeSlug as SourceSlug]?.title}
+                          Drawing from the {SOURCE_INFO[activeSlug as SourceSlug]?.title}
                         </p>
                       )}
 
                       {/* Line 2/inline: Source in muted + gold */}
                       {selectedSituation || showSomethingElse ? (
-                        <p className="mt-1 text-xs text-muted sm:mt-0">
-                          <span className="hidden sm:inline">· </span>
-                          Drawing from{" "}
+                        <p className="mt-2 text-xs text-muted sm:mt-0 sm:ml-1">
+                          <span className="hidden sm:inline">· Drawing from the </span>
                           <span style={{ color: "#D4AF37" }}>
                             {SOURCE_INFO[activeSlug as SourceSlug]?.title}
                           </span>
@@ -679,7 +678,7 @@ export default function OracleForm() {
                 // After answer: situation + source, locked, no Change button
                 <div className="mb-8 space-y-3">
                   <div className="rounded-lg border border-line bg-elevated p-4">
-                    <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-center justify-between gap-4">
                       <div className="flex-1">
                         {/* Line 1: ✓ Situation */}
                         {selectedSituation ? (
@@ -692,15 +691,14 @@ export default function OracleForm() {
                           </p>
                         ) : (
                           <p className="text-sm font-medium text-primary">
-                            ✓ Answered from {SOURCE_INFO[activeSlug as SourceSlug]?.title}
+                            ✓ Answered from the {SOURCE_INFO[activeSlug as SourceSlug]?.title}
                           </p>
                         )}
 
                         {/* Line 2/inline: Source in muted + gold */}
                         {selectedSituation || showSomethingElse ? (
-                          <p className="mt-1 text-xs text-muted sm:mt-0">
-                            <span className="hidden sm:inline">· </span>
-                            Answered from{" "}
+                          <p className="mt-2 text-xs text-muted sm:mt-0 sm:ml-1">
+                            <span className="hidden sm:inline">· Answered from the </span>
                             <span style={{ color: "#D4AF37" }}>
                               {SOURCE_INFO[activeSlug as SourceSlug]?.title}
                             </span>
