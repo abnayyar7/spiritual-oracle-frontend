@@ -522,7 +522,7 @@ export default function OracleForm() {
                   >
                     <label className="block space-y-3">
                       <span className="text-sm font-medium text-secondary">
-                        Describe what's on your mind in a few words
+                        Describe what&apos;s on your mind in a few words
                       </span>
                       <input
                         type="text"
@@ -623,84 +623,78 @@ export default function OracleForm() {
 
         {/* Unified compact bar section - shows only when source is selected */}
         <AnimatePresence mode="wait">
-          {activeSlug && !result && (
-            // Before answer: "Drawing from..." with Change button
+          {activeSlug && (
             <motion.div
-              key="compact-bar-before-answer"
+              key="compact-bar"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 10 }}
               transition={{ duration: 0.3 }}
-              className="mb-8 flex items-center justify-between rounded-lg border border-line bg-elevated p-4"
             >
-              <p className="text-sm text-muted">
-                {getSourceLabel(activeSlug as SourceSlug)}
-              </p>
-              {selectedSituation || showSomethingElse ? (
-                <button
-                  type="button"
-                  onClick={selectedSituation ? collapseSituation : () => setShowSomethingElse(false)}
-                  className="text-sm text-accent transition-colors hover:underline"
-                >
-                  Change
-                </button>
-              ) : null}
-            </motion.div>
-          )}
+              {!result ? (
+                // Before answer: "Drawing from..." with Change button
+                <div className="mb-8 flex items-center justify-between rounded-lg border border-line bg-elevated p-4">
+                  <p className="text-sm text-muted">
+                    {getSourceLabel(activeSlug as SourceSlug)}
+                  </p>
+                  {selectedSituation || showSomethingElse ? (
+                    <button
+                      type="button"
+                      onClick={selectedSituation ? collapseSituation : () => setShowSomethingElse(false)}
+                      className="text-sm text-accent transition-colors hover:underline"
+                    >
+                      Change
+                    </button>
+                  ) : null}
+                </div>
+              ) : (
+                // After answer: "✓ Answered from..." with Ask Another Question
+                <div className="mb-8 space-y-3">
+                  <div className="flex items-center justify-between rounded-lg border border-line bg-elevated p-4">
+                    <p className="text-sm font-medium text-primary">
+                      ✓ Answered from {SOURCE_INFO[activeSlug as SourceSlug]?.title}
+                    </p>
+                    <button
+                      type="button"
+                      onClick={handleAskAnotherQuestion}
+                      className="text-sm text-accent transition-colors hover:underline"
+                    >
+                      Ask Another Question →
+                    </button>
+                  </div>
 
-          {activeSlug && result && (
-            // After answer: "✓ Answered from..." with Ask Another Question
-            <motion.div
-              key="compact-bar-after-answer"
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 10 }}
-              transition={{ duration: 0.3 }}
-              className="mb-8 space-y-3"
-            >
-              <div className="flex items-center justify-between rounded-lg border border-line bg-elevated p-4">
-                <p className="text-sm font-medium text-primary">
-                  ✓ Answered from {SOURCE_INFO[activeSlug as SourceSlug]?.title}
-                </p>
-                <button
-                  type="button"
-                  onClick={handleAskAnotherQuestion}
-                  className="text-sm text-accent transition-colors hover:underline"
-                >
-                  Ask Another Question →
-                </button>
-              </div>
-
-              {/* "Same topic?" choice */}
-              <AnimatePresence>
-                {showRestartChoice && (
-                  <motion.div
-                    initial={{ opacity: 0, y: -10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: -10 }}
-                    transition={{ duration: 0.2 }}
-                    className="rounded-lg border border-line bg-elevated p-4"
-                  >
-                    <p className="mb-3 text-sm font-medium text-secondary">Same topic?</p>
-                    <div className="flex gap-3">
-                      <button
-                        type="button"
-                        onClick={handleSameTopicAgain}
-                        className="flex-1 rounded-lg border border-accent px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent hover:text-on-accent"
+                  {/* "Same topic?" choice */}
+                  <AnimatePresence>
+                    {showRestartChoice && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        transition={{ duration: 0.2 }}
+                        className="rounded-lg border border-line bg-elevated p-4"
                       >
-                        Yes, ask again
-                      </button>
-                      <button
-                        type="button"
-                        onClick={handleNewTopic}
-                        className="flex-1 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-on-accent transition-opacity hover:opacity-90"
-                      >
-                        New topic
-                      </button>
-                    </div>
-                  </motion.div>
-                )}
-              </AnimatePresence>
+                        <p className="mb-3 text-sm font-medium text-secondary">Same topic?</p>
+                        <div className="flex gap-3">
+                          <button
+                            type="button"
+                            onClick={handleSameTopicAgain}
+                            className="flex-1 rounded-lg border border-accent px-3 py-2 text-sm font-medium text-accent transition-colors hover:bg-accent hover:text-on-accent"
+                          >
+                            Yes, ask again
+                          </button>
+                          <button
+                            type="button"
+                            onClick={handleNewTopic}
+                            className="flex-1 rounded-lg bg-accent px-3 py-2 text-sm font-medium text-on-accent transition-opacity hover:opacity-90"
+                          >
+                            New topic
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
