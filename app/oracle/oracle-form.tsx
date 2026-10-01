@@ -28,10 +28,22 @@ type Source = {
   total_units: number;
 };
 
+type AnswerSections = {
+  acknowledgment: string;
+  verse_explained?: string | null;
+  why_this_verse?: string | null;
+  practices?: string[];
+  practice_days?: 21 | 40 | null;
+  closing: string;
+  addressed_as?: string | null;
+};
+
 type OracleResponse = {
   answer?: string;
   takeaway?: string;
   generated_takeaway?: string;
+  source_slug?: string;
+  answer_sections?: AnswerSections | null;
   original_text?: string;
   selected_translation?: string | null;
   selected_translation_author?: string | null;
@@ -48,9 +60,11 @@ type Result = {
   originalText: string;
   translation: string;
   hasTranslation: boolean;
+  sourceSlug?: string;
   chapterNumber?: number;
   verseNumber?: number;
   answer: string;
+  answerSections?: AnswerSections | null;
 };
 
 function normalizeResponse(response: OracleResponse): Result {
@@ -60,9 +74,11 @@ function normalizeResponse(response: OracleResponse): Result {
     originalText: response.original_text ?? response.entry?.original_text ?? "",
     translation,
     hasTranslation: translation.trim().length > 0,
+    sourceSlug: response.source_slug,
     chapterNumber: response.chapter_number ?? response.entry?.chapter_number,
     verseNumber: response.verse_number ?? response.entry?.verse_number,
     answer: response.answer ?? response.takeaway ?? response.generated_takeaway ?? "",
+    answerSections: response.answer_sections,
   };
 }
 
@@ -883,26 +899,85 @@ export default function OracleForm() {
 
         {result ? (
           <article className="mt-8 space-y-5 rounded-2xl border border-line bg-elevated p-6 shadow-sm sm:p-8">
+            {/* Label: Chapter X, Verse Y or Kand X, Doha Y */}
             <p className="text-xs uppercase tracking-[0.18em] text-muted">
-              Chapter {result.chapterNumber ?? "-"}, Verse{" "}
-              {result.verseNumber ?? "-"}
+              {result.sourceSlug === "ramcharitmanas"
+                ? `Kand ${result.chapterNumber ?? "-"}, Doha ${result.verseNumber ?? "-"}`
+                : `Chapter ${result.chapterNumber ?? "-"}, Verse ${result.verseNumber ?? "-"}`}
             </p>
             <p className="font-deva text-xl leading-[2.1] text-primary sm:text-2xl">
               {result.originalText}
             </p>
-            {result.hasTranslation ? (
+            {/* Hide translation per client decision */}
+            {false && result.hasTranslation ? (
               <p className="leading-7 text-secondary">{cleanVerseText(result.translation)}</p>
+            ) : null}
+
+            {/* Answer sections or fallback */}
+            {result.answerSections ? (
+              <div className="space-y-4 border-t border-line pt-5">
+                {/* Acknowledgment (opening paragraph, no label) */}
+                {result.answerSections.acknowledgment && (
+                  <p className="leading-7 text-primary">{result.answerSections.acknowledgment}</p>
+                )}
+
+                {/* Verse explanation */}
+                {result.answerSections.verse_explained && (
+                  <div>
+                    <h3 className="text-xs uppercase tracking-[0.18em] text-accent">
+                      What This Verse Says
+                    </h3>
+                    <p className="mt-2 leading-7 text-primary">
+                      {result.answerSections.verse_explained}
+                    </p>
+                  </div>
+                )}
+
+                {/* Why this verse */}
+                {result.answerSections.why_this_verse && (
+                  <div>
+                    <h3 className="text-xs uppercase tracking-[0.18em] text-accent">
+                      Why This Verse For You
+                    </h3>
+                    <p className="mt-2 leading-7 text-primary">
+                      {result.answerSections.why_this_verse}
+                    </p>
+                  </div>
+                )}
+
+                {/* Practices */}
+                {result.answerSections.practices && result.answerSections.practices.length > 0 && (
+                  <div>
+                    <h3 className="text-xs uppercase tracking-[0.18em] text-accent">
+                      Your Practice
+                    </h3>
+                    {result.answerSections.practice_days && (
+                      <p className="mt-2 text-sm text-secondary">
+                        For the next {result.answerSections.practice_days} days:
+                      </p>
+                    )}
+                    <ol className="mt-2 list-inside list-decimal space-y-1 leading-7 text-primary">
+                      {result.answerSections.practices.map((practice, i) => (
+                        <li key={i}>{practice}</li>
+                      ))}
+                    </ol>
+                  </div>
+                )}
+
+                {/* Closing */}
+                {result.answerSections.closing && (
+                  <p className="border-t border-line pt-4 leading-7 text-primary">
+                    {result.answerSections.closing}
+                  </p>
+                )}
+              </div>
             ) : (
-              <p className="text-sm italic leading-7 text-muted">
-                English translation not yet available for this verse
-              </p>
+              /* Fallback to plain answer text */
+              <div className="border-t border-line pt-5">
+                <h2 className="text-xs uppercase tracking-[0.18em] text-accent">Answer</h2>
+                <p className="mt-3 leading-7 text-primary">{result.answer}</p>
+              </div>
             )}
-            <div className="border-t border-line pt-5">
-              <h2 className="text-xs uppercase tracking-[0.18em] text-accent">
-                Answer
-              </h2>
-              <p className="mt-3 leading-7 text-primary">{result.answer}</p>
-            </div>
           </article>
         ) : null}
       </section>
