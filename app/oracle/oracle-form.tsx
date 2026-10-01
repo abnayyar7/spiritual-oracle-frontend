@@ -252,7 +252,7 @@ export default function OracleForm() {
   };
 
   const handleNewTopic = () => {
-    // Full reset
+    // Full reset - all fields, all selections, answer
     setActiveTab("guided");
     setSelectedSituation(null);
     setActiveSlug("");
@@ -264,10 +264,13 @@ export default function OracleForm() {
     setShowSomethingElse(false);
     setSomethingElseInput("");
     setShowRestartChoice(false);
+    setHasAutoSubmitted(false);
+    setParamsProcessed(false);
 
-    // Scroll to top
+    // Smooth scroll to top of form
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: "smooth" });
+      questionInputRef.current?.blur();
     }, 100);
   };
 
@@ -435,12 +438,15 @@ export default function OracleForm() {
           </h1>
         </div>
 
-        {/* Tabs */}
+        {/* Tabs - disabled when answered */}
         <div className="mb-8 flex gap-2 border-b border-line">
           <button
             type="button"
             onClick={() => handleTabChange("guided")}
+            disabled={!!result}
             className={`px-4 py-3 text-sm font-medium transition-colors ${
+              result ? "cursor-not-allowed opacity-50" : ""
+            } ${
               activeTab === "guided"
                 ? "border-b-2 border-accent text-primary"
                 : "text-secondary hover:text-primary"
@@ -451,7 +457,10 @@ export default function OracleForm() {
           <button
             type="button"
             onClick={() => handleTabChange("choose")}
+            disabled={!!result}
             className={`px-4 py-3 text-sm font-medium transition-colors ${
+              result ? "cursor-not-allowed opacity-50" : ""
+            } ${
               activeTab === "choose"
                 ? "border-b-2 border-accent text-primary"
                 : "text-secondary hover:text-primary"
@@ -706,14 +715,7 @@ export default function OracleForm() {
                         ) : null}
                       </div>
 
-                      {/* Ask Another Question button */}
-                      <button
-                        type="button"
-                        onClick={handleAskAnotherQuestion}
-                        className="whitespace-nowrap text-sm text-accent transition-colors hover:underline"
-                      >
-                        Ask Another →
-                      </button>
+                      {/* Change button disabled when answered */}
                     </div>
                   </div>
 
@@ -903,14 +905,14 @@ export default function OracleForm() {
               <p className="mt-3 leading-7 text-primary">{result.answer}</p>
             </div>
 
-            {/* Ask Another Question button below answer */}
-            <div className="flex justify-center pt-2">
+            {/* Ask Another Question full-width button - resets everything */}
+            <div className="mt-6">
               <button
                 type="button"
-                onClick={handleAskAnotherQuestion}
-                className="text-sm text-accent transition-colors hover:underline"
+                onClick={handleNewTopic}
+                className="flex h-12 w-full items-center justify-center rounded-full bg-accent px-4 text-sm font-medium tracking-wide text-on-accent transition-opacity hover:opacity-90"
               >
-                Ask another question →
+                Ask another question
               </button>
             </div>
           </article>
