@@ -695,7 +695,7 @@ export default function OracleForm() {
                           </p>
                         )}
 
-                        {/* Line 2/inline: Source in muted + gold */}
+                        {/* Line 2/inline: Source in muted + gold (same as pre-answer) */}
                         {selectedSituation || showSomethingElse ? (
                           <p className="mt-2 text-xs text-muted sm:mt-0 sm:ml-1">
                             <span className="hidden sm:inline">· Answered from the </span>
@@ -834,7 +834,7 @@ export default function OracleForm() {
                     value={question}
                     readOnly
                     rows={5}
-                    className="w-full rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none opacity-75 transition"
+                    className="w-full resize-none rounded-xl border border-line bg-surface px-3.5 py-3 text-primary outline-none opacity-60 transition cursor-default"
                   />
                   <button
                     type="button"
@@ -867,7 +867,7 @@ export default function OracleForm() {
                   type="number"
                   value={number}
                   readOnly
-                  className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3.5 text-primary outline-none opacity-75 transition"
+                  className="mt-2 h-12 w-full rounded-xl border border-line bg-surface px-3.5 text-primary outline-none opacity-60 transition cursor-default"
                 />
               </label>
             </motion.div>
@@ -901,6 +901,17 @@ export default function OracleForm() {
                 Answer
               </h2>
               <p className="mt-3 leading-7 text-primary">{result.answer}</p>
+            </div>
+
+            {/* Ask Another Question button below answer */}
+            <div className="flex justify-center pt-2">
+              <button
+                type="button"
+                onClick={handleAskAnotherQuestion}
+                className="text-sm text-accent transition-colors hover:underline"
+              >
+                Ask another question →
+              </button>
             </div>
           </article>
         ) : null}

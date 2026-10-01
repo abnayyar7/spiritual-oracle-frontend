@@ -1,0 +1,50 @@
+﻿
+Running 2 tests using 1 worker
+
+node.exe : (node:2108) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ((node:2108) War... env being set.:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+(Use `node --trace-warnings ...` to show where the warning was created)
+Page URL: https://spiritual-oracle-web.netlify.app/login
+Page title: Log In — Spiritual Oracle
+Guided tab not found
+✓ Screenshot 1: Initial page
+Total buttons on page: 4
+✓ Screenshot 2: After clicking Guided tab
+Visible button texts: [ '☾Dark', '☾Dark', '', 'Log In' ]
+Found 0 situation-related buttons
+✓ Screenshot 3: After clicking card
+✓ Found 0 "Drawing from" bar(s)
+Relevant bar text found: []
+TEST RESULT:  FAIL (0 bars)
+  ok 1 test-oracle-bug.spec.ts:4:7 › Oracle - Drawing from bar bug › should show exactly one 'Drawing from' bar when guided card is selected (14.8s)
+  x  2 test-oracle-bug.spec.ts:70:7 › Oracle - Drawing from bar bug › should show exactly one bar when switching between tabs (30.1s)
+
+
+  1) test-oracle-bug.spec.ts:70:7 › Oracle - Drawing from bar bug › should show exactly one bar when switching between tabs 
+
+    Test timeout of 30000ms exceeded.
+
+    Error: page.click: Test timeout of 30000ms exceeded.
+    Call log:
+      - waiting for locator('button:has-text("Guided")')
+
+
+      74 |
+      75 |     // Click Guided tab and select a card
+    > 76 |     await page.click('button:has-text("Guided")');
+         |                ^
+      77 |     await page.waitForTimeout(500);
+      78 |     const card = page.locator("button").filter({ hasText: /Relationship|Love|Career/ }).first();
+      79 |     if (await card.isVisible()) {
+        at C:\Users\nayya\OneDrive\Documents\Practice Code\Geeta\spiritual-oracle-web\test-oracle-bug.spec.ts:76:16
+
+    Error Context: test-results\test-oracle-bug-Oracle---D-ea52c-when-switching-between-tabs\error-context.md
+
+  1 failed
+    test-oracle-bug.spec.ts:70:7 › Oracle - Drawing from bar bug › should show exactly one bar when switching between tabs 
+  1 passed (46.4s)

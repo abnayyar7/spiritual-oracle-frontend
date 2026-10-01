@@ -1,7 +1,9 @@
 export function cleanVerseText(text: string): string {
   // Remove leading meter labels (चौपाई, दोहा, सोरठा, छंद, etc.)
+  // Also remove chapter.verse prefix (e.g., "1.23. " or "1.23. ")
   const cleanedText = text
     .replace(/^(चौपाई|दोहा|सोरठा|छंद|कवित्त|सवैया|चरण|पद|श्लोक)\s*[\n\r]*/gm, "")
+    .replace(/^\d+\.\d+\.\s*/gm, "")
     .trim();
 
   // Truncate to ~250 characters (roughly 4-5 lines) if too long
