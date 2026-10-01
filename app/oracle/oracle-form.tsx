@@ -621,7 +621,7 @@ export default function OracleForm() {
           <p className="mb-4 text-sm text-danger">{sourceError}</p>
         )}
 
-        {/* Unified compact bar section - shows only when source is selected */}
+        {/* Unified compact bar section - shows situation + source */}
         <AnimatePresence mode="wait">
           {activeSlug && (
             <motion.div
@@ -632,35 +632,91 @@ export default function OracleForm() {
               transition={{ duration: 0.3 }}
             >
               {!result ? (
-                // Before answer: "Drawing from..." with Change button
-                <div className="mb-8 flex items-center justify-between rounded-lg border border-line bg-elevated p-4">
-                  <p className="text-sm text-muted">
-                    {getSourceLabel(activeSlug as SourceSlug)}
-                  </p>
-                  {selectedSituation || showSomethingElse ? (
-                    <button
-                      type="button"
-                      onClick={selectedSituation ? collapseSituation : () => setShowSomethingElse(false)}
-                      className="text-sm text-accent transition-colors hover:underline"
-                    >
-                      Change
-                    </button>
-                  ) : null}
+                // Before answer: situation + source with Change button
+                <div className="mb-8 rounded-lg border border-line bg-elevated p-4">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1">
+                      {/* Line 1: Situation or user input */}
+                      {selectedSituation ? (
+                        <p className="text-sm font-medium text-primary">
+                          {SITUATIONS.find(s => s.id === selectedSituation)?.label}
+                        </p>
+                      ) : showSomethingElse && somethingElseInput ? (
+                        <p className="truncate text-sm font-medium text-primary">
+                          {somethingElseInput}
+                        </p>
+                      ) : (
+                        <p className="text-sm font-medium text-primary">
+                          Drawing from {SOURCE_INFO[activeSlug as SourceSlug]?.title}
+                        </p>
+                      )}
+
+                      {/* Line 2/inline: Source in muted + gold */}
+                      {selectedSituation || showSomethingElse ? (
+                        <p className="mt-1 text-xs text-muted sm:mt-0">
+                          <span className="hidden sm:inline">· </span>
+                          Drawing from{" "}
+                          <span style={{ color: "#D4AF37" }}>
+                            {SOURCE_INFO[activeSlug as SourceSlug]?.title}
+                          </span>
+                        </p>
+                      ) : null}
+                    </div>
+
+                    {/* Change button */}
+                    {selectedSituation || showSomethingElse ? (
+                      <button
+                        type="button"
+                        onClick={selectedSituation ? collapseSituation : () => setShowSomethingElse(false)}
+                        className="whitespace-nowrap text-sm text-accent transition-colors hover:underline"
+                      >
+                        Change
+                      </button>
+                    ) : null}
+                  </div>
                 </div>
               ) : (
-                // After answer: "✓ Answered from..." with Ask Another Question
+                // After answer: situation + source, locked, no Change button
                 <div className="mb-8 space-y-3">
-                  <div className="flex items-center justify-between rounded-lg border border-line bg-elevated p-4">
-                    <p className="text-sm font-medium text-primary">
-                      ✓ Answered from {SOURCE_INFO[activeSlug as SourceSlug]?.title}
-                    </p>
-                    <button
-                      type="button"
-                      onClick={handleAskAnotherQuestion}
-                      className="text-sm text-accent transition-colors hover:underline"
-                    >
-                      Ask Another Question →
-                    </button>
+                  <div className="rounded-lg border border-line bg-elevated p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        {/* Line 1: ✓ Situation */}
+                        {selectedSituation ? (
+                          <p className="text-sm font-medium text-primary">
+                            ✓ {SITUATIONS.find(s => s.id === selectedSituation)?.label}
+                          </p>
+                        ) : showSomethingElse && somethingElseInput ? (
+                          <p className="truncate text-sm font-medium text-primary">
+                            ✓ {somethingElseInput}
+                          </p>
+                        ) : (
+                          <p className="text-sm font-medium text-primary">
+                            ✓ Answered from {SOURCE_INFO[activeSlug as SourceSlug]?.title}
+                          </p>
+                        )}
+
+                        {/* Line 2/inline: Source in muted + gold */}
+                        {selectedSituation || showSomethingElse ? (
+                          <p className="mt-1 text-xs text-muted sm:mt-0">
+                            <span className="hidden sm:inline">· </span>
+                            Answered from{" "}
+                            <span style={{ color: "#D4AF37" }}>
+                              {SOURCE_INFO[activeSlug as SourceSlug]?.title}
+                            </span>
+                          </p>
+                        ) : null}
+                      </div>
+
+                      {/* Ask Another Question button */}
+                      <button
+                        type="button"
+                        onClick={handleAskAnotherQuestion}
+                        className="whitespace-nowrap text-sm text-accent transition-colors hover:underline"
+                      >
+                        Ask Another →
+                      </button>
+                    </div>
                   </div>
 
                   {/* "Same topic?" choice */}
