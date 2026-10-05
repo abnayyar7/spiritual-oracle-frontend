@@ -908,10 +908,7 @@ export default function OracleForm() {
             <p className="font-deva text-xl leading-[2.1] text-primary sm:text-2xl">
               {result.originalText}
             </p>
-            {/* Hide translation per client decision */}
-            {false && result.hasTranslation ? (
-              <p className="leading-7 text-secondary">{cleanVerseText(result.translation)}</p>
-            ) : null}
+            {/* Translation hidden per client decision */}
 
             {/* Answer sections or fallback */}
             {result.answerSections ? (
