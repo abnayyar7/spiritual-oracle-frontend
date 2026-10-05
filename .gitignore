@@ -12,6 +12,11 @@
 
 # testing
 /coverage
+/test-results/
+*.log
+test-*.spec.ts
+run-quality-tests.spec.ts
+*.png
 
 # next.js
 /.next/
