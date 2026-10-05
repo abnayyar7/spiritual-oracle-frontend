@@ -16,6 +16,8 @@ import {
 
 type Tab = "guided" | "choose";
 
+const SHOW_TRANSLATION = false;
+
 const FALLBACK_SOURCES: Source[] = [
   { id: 2, slug: "bhagavad_gita", title: "Bhagavad Gita", total_units: 701 },
   { id: 3, slug: "ramcharitmanas", title: "Ramcharitmanas", total_units: 1074 },
@@ -908,7 +910,9 @@ export default function OracleForm() {
             <p className="font-deva text-xl leading-[2.1] text-primary sm:text-2xl">
               {result.originalText}
             </p>
-            {/* Translation hidden per client decision */}
+            {SHOW_TRANSLATION && result.hasTranslation ? (
+              <p className="leading-7 text-secondary">{cleanVerseText(result.translation)}</p>
+            ) : null}
 
             {/* Answer sections or fallback */}
             {result.answerSections ? (
