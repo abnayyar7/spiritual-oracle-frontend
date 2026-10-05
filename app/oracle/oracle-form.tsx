@@ -827,7 +827,7 @@ export default function OracleForm() {
                 disabled={isSubmitDisabled}
                 className="flex h-12 w-full items-center justify-center rounded-full bg-accent px-4 text-sm font-medium tracking-wide text-on-accent transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {isLoading ? "Asking..." : "Ask Oracle"}
+                {isLoading ? "Reflecting on your verse…" : "Ask Oracle"}
               </button>
             </motion.form>
           )}
